@@ -8,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Configure services
 builder.Services.ConfigureDatabase(builder.Configuration, builder.Environment)
     .ConfigureIdentity()
-    .ConfigureJwt(builder.Configuration)
+    .ConfigureJwt(builder.Configuration, builder.Environment)
     .ConfigureAuthorizationPolicies()
     .ConfigureSwagger();
 
@@ -38,12 +38,25 @@ app.MapInvitationEndpoints();
 app.MapGradeEndpoints();
 app.MapPictogramEndpoints();
 
-// Apply migrations and seed data only if not in the "Testing" environment
+// Apply migrations and optionally seed data
 if (!app.Environment.IsEnvironment("Testing"))
 {
     await app.ApplyMigrationsAsync();
-    await app.SeedDataAsync();
-    await app.AddDefaultPictograms();
+
+    var seedDataEnabled = app.Environment.IsDevelopment() ||
+                           app.Configuration.GetValue<bool>("SeedData:Enabled");
+    if (seedDataEnabled)
+    {
+        if (app.Configuration.GetValue<bool>("SeedData:CreateDefaultUser"))
+        {
+            await app.SeedDataAsync();
+        }
+
+        if (app.Configuration.GetValue<bool>("SeedData:AddDefaultPictograms"))
+        {
+            await app.AddDefaultPictograms();
+        }
+    }
 }
 
 
