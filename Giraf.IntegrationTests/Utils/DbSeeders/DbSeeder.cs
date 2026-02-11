@@ -26,60 +26,35 @@ public abstract class DbSeeder
 
     public void SeedUsers(UserManager<GirafUser> userManager)
     {
-        var owner = new GirafUser
+        CreateAndAddUser(userManager, "owner", "owner@email.com", "Owner", "Ownerson");
+        CreateAndAddUser(userManager, "admin", "admin@email.com", "Admin", "Adminson");
+        CreateAndAddUser(userManager, "member", "member@email.com", "Member", "Memberson");
+    }
+
+    private void CreateAndAddUser(UserManager<GirafUser> userManager, string key, string email, string firstName, string lastName)
+    {
+        var user = new GirafUser
         {
-            UserName = "owner@email.com",
-            Email = "owner@email.com",
-            FirstName = "Owner",
-            LastName = "Ownerson",
+            UserName = email,
+            Email = email,
+            FirstName = firstName,
+            LastName = lastName,
             Organizations = new List<Organization>()
         };
-        var ownerResult = userManager.CreateAsync(owner, "Password123!").GetAwaiter().GetResult();
-        Users.Add("owner", ownerResult.Succeeded ? owner : null);
-        userManager.AddClaimAsync(owner, new Claim(ClaimTypes.Name, owner.UserName));
-        userManager.AddClaimAsync(owner, new Claim(JwtRegisteredClaimNames.Sub, owner.Id));
-        
-        var admin = new GirafUser
+        var result = userManager.CreateAsync(user, "Password123!").GetAwaiter().GetResult();
+        if (!result.Succeeded)
         {
-            UserName = "admin@email.com",
-            Email = "admin@email.com",
-            FirstName = "Admin",
-            LastName = "Adminson",
-            Organizations = new List<Organization>()
-        };
-        var adminResult = userManager.CreateAsync(admin, "Password123!").GetAwaiter().GetResult();
-        Users.Add("admin", adminResult.Succeeded ? admin : null);
-        userManager.AddClaimAsync(admin, new Claim(ClaimTypes.Name, admin.UserName));
-        userManager.AddClaimAsync(admin, new Claim(JwtRegisteredClaimNames.Sub, admin.Id));
-        
-        var member = new GirafUser
-        {
-            UserName = "member@email.com",
-            Email = "member@email.com",
-            FirstName = "Member",
-            LastName = "Memberson",
-            Organizations = new List<Organization>()
-        };
-        var memberResult = userManager.CreateAsync(member, "Password123!").GetAwaiter().GetResult();
-        Users.Add("member", memberResult.Succeeded ? member : null);
-        userManager.AddClaimAsync(member, new Claim(ClaimTypes.Name, member.UserName));
-        userManager.AddClaimAsync(member, new Claim(JwtRegisteredClaimNames.Sub, member.Id));
+            throw new InvalidOperationException(
+                $"Failed to create test user '{key}': {string.Join(", ", result.Errors.Select(e => e.Description))}");
+        }
+        Users.Add(key, user);
+        userManager.AddClaimAsync(user, new Claim(ClaimTypes.Name, user.UserName!)).GetAwaiter().GetResult();
+        userManager.AddClaimAsync(user, new Claim(JwtRegisteredClaimNames.Sub, user.Id)).GetAwaiter().GetResult();
     }
 
     public void SeedSingleUser(UserManager<GirafUser> userManager)
     {
-        var user = new GirafUser
-        {
-            UserName = "user@email.com",
-            Email = "user@email.com",
-            FirstName = "User",
-            LastName = "Userson",
-            Organizations = new List<Organization>()
-        };
-        var ownerResult = userManager.CreateAsync(user, "Password123!").GetAwaiter().GetResult();
-        Users.Add("user", ownerResult.Succeeded ? user : null);
-        userManager.AddClaimAsync(user, new Claim(ClaimTypes.Name, user.UserName));
-        userManager.AddClaimAsync(user, new Claim(JwtRegisteredClaimNames.Sub, user.Id));
+        CreateAndAddUser(userManager, "user", "user@email.com", "User", "Userson");
     }
 
     public void SeedOrganization(GirafDbContext dbContext,
@@ -98,17 +73,17 @@ public abstract class DbSeeder
         };
         dbContext.Organizations.Add(organization);
         
-        userManager.AddClaimAsync(owner, new Claim("OrgOwner", organization.Id.ToString()));
-        userManager.AddClaimAsync(owner, new Claim("OrgAdmin", organization.Id.ToString()));
-        userManager.AddClaimAsync(owner, new Claim("OrgMember", organization.Id.ToString()));
+        userManager.AddClaimAsync(owner, new Claim("OrgOwner", organization.Id.ToString())).GetAwaiter().GetResult();
+        userManager.AddClaimAsync(owner, new Claim("OrgAdmin", organization.Id.ToString())).GetAwaiter().GetResult();
+        userManager.AddClaimAsync(owner, new Claim("OrgMember", organization.Id.ToString())).GetAwaiter().GetResult();
         organization.Users.Add(owner);
 
         if (admins.Any())
         {
             foreach (var admin in admins)
             {
-                userManager.AddClaimAsync(admin, new Claim("OrgAdmin", organization.Id.ToString()));
-                userManager.AddClaimAsync(admin, new Claim("OrgMember", organization.Id.ToString()));
+                userManager.AddClaimAsync(admin, new Claim("OrgAdmin", organization.Id.ToString())).GetAwaiter().GetResult();
+                userManager.AddClaimAsync(admin, new Claim("OrgMember", organization.Id.ToString())).GetAwaiter().GetResult();
                 organization.Users.Add(admin);
             }
         }
@@ -117,7 +92,7 @@ public abstract class DbSeeder
         {
             foreach (var member in members)
             {
-                userManager.AddClaimAsync(member, new Claim("OrgMember", organization.Id.ToString()));
+                userManager.AddClaimAsync(member, new Claim("OrgMember", organization.Id.ToString())).GetAwaiter().GetResult();
                 organization.Users.Add(member);
             }
         }
@@ -196,7 +171,8 @@ public abstract class DbSeeder
             Pictogram = pictogram
         };
 
-        var citizen = dbContext.Citizens.Find(citizenId);
+        var citizen = dbContext.Citizens.Find(citizenId)
+            ?? throw new InvalidOperationException($"Citizen with ID {citizenId} not found during seeding.");
         citizen.Activities.Add(activity);
         dbContext.Add(activity);
         dbContext.SaveChanges();
@@ -215,7 +191,8 @@ public abstract class DbSeeder
             Pictogram = pictogram
         };
 
-        var grade = dbContext.Grades.Find(gradeId);
+        var grade = dbContext.Grades.Find(gradeId)
+            ?? throw new InvalidOperationException($"Grade with ID {gradeId} not found during seeding.");
         grade.Activities.Add(activity);
         dbContext.Add(activity);
         dbContext.SaveChanges();
@@ -233,7 +210,8 @@ public abstract class DbSeeder
         };
         
         dbContext.Grades.Add(grade);
-        var org = dbContext.Organizations.Find(organization.Id);
+        var org = dbContext.Organizations.Find(organization.Id)
+            ?? throw new InvalidOperationException($"Organization with ID {organization.Id} not found during seeding.");
         org.Grades.Add(grade);
         dbContext.SaveChanges();
         Grades.Add(grade);
@@ -241,7 +219,8 @@ public abstract class DbSeeder
 
     public void AddCitizensToGrade(GirafDbContext dbContext, int gradeId, List<Citizen> citizens)
     {
-        var grade = dbContext.Grades.Find(gradeId);
+        var grade = dbContext.Grades.Find(gradeId)
+            ?? throw new InvalidOperationException($"Grade with ID {gradeId} not found during seeding.");
         
         foreach (var citizen in citizens)
         {
