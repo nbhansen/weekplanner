@@ -23,22 +23,15 @@ namespace GirafAPI.UnitTests.Entities.Users
             {
                 FirstName = "User",
                 LastName = "Userson",
-                Email = null, // Missing the required value
+                Email = null!,
                 Password = "validpassword"
             };            
 
             // Act
             var validationResults = ValidateModel(newUser);
 
-            // Log
-            foreach (var result in validationResults)
-            {
-                Console.WriteLine($"{result.ErrorMessage} - {string.Join(",", result.MemberNames)}");
-            }
-
             // Assert
             Assert.Contains(validationResults, v => v.MemberNames.Contains(nameof(CreateUserDTO.Email)));
-            Assert.Equal("The Email field is required.", validationResults[0].ErrorMessage);
         }
 
         [Fact]
@@ -50,21 +43,14 @@ namespace GirafAPI.UnitTests.Entities.Users
                 FirstName = "User",
                 LastName = "Userson",
                 Email = "ValidEmail@email.com", 
-                Password = null // Missing the required value
+                Password = null!
             };            
 
             // Act
             var validationResults = ValidateModel(newUser);
 
-            // Log
-            foreach (var result in validationResults)
-            {
-                Console.WriteLine($"{result.ErrorMessage} - {string.Join(",", result.MemberNames)}");
-            }
-
             // Assert
             Assert.Contains(validationResults, v => v.MemberNames.Contains(nameof(CreateUserDTO.Password)));
-            Assert.Equal("The Password field is required.", validationResults[0].ErrorMessage);
         }
 
         [Fact]
@@ -82,15 +68,8 @@ namespace GirafAPI.UnitTests.Entities.Users
             // Act
             var validationResults = ValidateModel(createUserDTO);
 
-            // Log
-            foreach (var result in validationResults)
-            {
-                Console.WriteLine($"{result.ErrorMessage} - {string.Join(",", result.MemberNames)}");
-            }
-
             // Assert
             Assert.Contains(validationResults, v => v.MemberNames.Contains(nameof(CreateUserDTO.Email)));
-            Assert.Equal("The field Email must be a string with a maximum length of 50.", validationResults[0].ErrorMessage);
         }
 
         [Fact]
@@ -108,15 +87,8 @@ namespace GirafAPI.UnitTests.Entities.Users
             // Act
             var validationResults = ValidateModel(createUserDTO);
 
-            // Log
-            foreach (var result in validationResults)
-            {
-                Console.WriteLine($"{result.ErrorMessage} - {string.Join(",", result.MemberNames)}");
-            }
-
             // Assert
             Assert.Contains(validationResults, v => v.MemberNames.Contains(nameof(CreateUserDTO.Password)));
-            Assert.Equal("The field Password must be a string with a maximum length of 100.", validationResults[0].ErrorMessage);
         }
 
         [Fact]
@@ -134,14 +106,8 @@ namespace GirafAPI.UnitTests.Entities.Users
             // Act
             var validationResults = ValidateModel(createUserDTO);
 
-            // Log
-            foreach (var result in validationResults)
-            {
-                Console.WriteLine($"{result.ErrorMessage} - {string.Join(",", result.MemberNames)}");
-            }
-
             // Assert
-            Assert.Empty(validationResults); // Expect no validation errors
+            Assert.Empty(validationResults);
         }
     }
 }

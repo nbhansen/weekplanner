@@ -4,6 +4,7 @@ using GirafAPI.Entities.Pictograms;
 using GirafAPI.Entities.Users;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace GirafAPI.Extensions
 {
@@ -38,11 +39,30 @@ namespace GirafAPI.Extensions
         {
             using var scope = app.ApplicationServices.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<GirafDbContext>();
+            var env = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+                .CreateLogger("SeedData");
+
             if (dbContext.Pictograms.Any()) return;
             var defaultPictograms = new List<Pictogram>();
             
-            var defaultPictogramDirectory = Path.Combine("wwwroot", "images", "pictograms", "default");
+            var webRoot = string.IsNullOrWhiteSpace(env.WebRootPath)
+                ? Path.Combine(AppContext.BaseDirectory, "wwwroot")
+                : env.WebRootPath;
+            var defaultPictogramDirectory = Path.Combine(webRoot, "images", "pictograms", "default");
+
+            if (!Directory.Exists(defaultPictogramDirectory))
+            {
+                logger.LogWarning("Default pictogram directory not found: {Directory}", defaultPictogramDirectory);
+                return;
+            }
+
             var defaultPictogramFiles = Directory.GetFiles(defaultPictogramDirectory);
+            if (defaultPictogramFiles.Length == 0)
+            {
+                logger.LogWarning("No default pictogram files found in {Directory}", defaultPictogramDirectory);
+                return;
+            }
                 
             foreach (var file in defaultPictogramFiles)
             {

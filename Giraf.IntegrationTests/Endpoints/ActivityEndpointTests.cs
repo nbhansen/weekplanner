@@ -554,7 +554,8 @@ namespace Giraf.IntegrationTests.Endpoints
             response.EnsureSuccessStatusCode();
             var activityDto = await response.Content.ReadFromJsonAsync<ActivityDTO>();
             Assert.NotNull(activityDto);
-            Assert.Equal(pictogramId, activityId);
+            Assert.NotNull(activityDto.pictogram);
+            Assert.Equal(pictogramId, activityDto.pictogram.Id);
         }
 
         [Fact]

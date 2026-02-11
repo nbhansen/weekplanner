@@ -21,6 +21,7 @@ namespace Giraf.IntegrationTests.Utils;
 // This factory creates a Giraf web API configured for testing.
 internal class GirafWebApplicationFactory : WebApplicationFactory<Program>
 {
+    private readonly List<string> _dbFiles = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -31,6 +32,7 @@ internal class GirafWebApplicationFactory : WebApplicationFactory<Program>
 
             // Use a unique SQLite database file for each test to avoid concurrency issues
             var dbFileName = $"GirafTestDb_{Guid.NewGuid()}.db";
+            _dbFiles.Add(dbFileName);
 
             // Configure the DbContext for testing
             services.AddDbContext<GirafDbContext>(options =>
@@ -83,5 +85,17 @@ internal class GirafWebApplicationFactory : WebApplicationFactory<Program>
         var dbContext = scope.ServiceProvider.GetRequiredService<GirafDbContext>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<GirafUser>>();
         seeder.SeedData(dbContext, userManager);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (disposing)
+        {
+            foreach (var dbFile in _dbFiles)
+            {
+                try { File.Delete(dbFile); } catch { /* best-effort cleanup */ }
+            }
+        }
     }
 }

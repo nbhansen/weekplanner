@@ -16,8 +16,14 @@ namespace GirafAPI.Extensions
     {
         public static IServiceCollection ConfigureDatabase(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
         {
-            services.AddDbContext<GirafDbContext>(options => 
-                options.UseNpgsql(configuration.GetConnectionString("DbConnection")));
+            var connectionString = configuration.GetConnectionString("DbConnection");
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                throw new InvalidOperationException("ConnectionStrings:DbConnection is required.");
+            }
+
+            services.AddDbContext<GirafDbContext>(options =>
+                options.UseNpgsql(connectionString));
 
             return services;
         }
@@ -39,12 +45,32 @@ namespace GirafAPI.Extensions
             return services;
         }
 
-        public static IServiceCollection ConfigureJwt(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection ConfigureJwt(this IServiceCollection services, IConfiguration configuration, IWebHostEnvironment env)
         {
             var jwtSettingsSection = configuration.GetSection("JwtSettings");
             services.Configure<JwtSettings>(jwtSettingsSection);
 
             var jwtSettings = jwtSettingsSection.Get<JwtSettings>();
+            if (jwtSettings == null)
+            {
+                throw new InvalidOperationException("JwtSettings configuration is missing.");
+            }
+
+            if (string.IsNullOrWhiteSpace(jwtSettings.SecretKey) || jwtSettings.SecretKey.Length < 32)
+            {
+                throw new InvalidOperationException("JwtSettings:SecretKey must be at least 32 characters.");
+            }
+
+            if (string.IsNullOrWhiteSpace(jwtSettings.Issuer))
+            {
+                throw new InvalidOperationException("JwtSettings:Issuer is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(jwtSettings.Audience))
+            {
+                throw new InvalidOperationException("JwtSettings:Audience is required.");
+            }
+
             var key = Encoding.UTF8.GetBytes(jwtSettings!.SecretKey);
 
             services.AddAuthentication(options =>
@@ -54,7 +80,7 @@ namespace GirafAPI.Extensions
             })
             .AddJwtBearer(options =>
             {
-                options.RequireHttpsMetadata = false; // Set to true in production
+                options.RequireHttpsMetadata = !env.IsDevelopment();
                 options.SaveToken = true;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {

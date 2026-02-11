@@ -28,6 +28,29 @@ the development environment. To run the production environment, call:
 docker compose -f docker-compose.prod.yml up --build
 ```
 
+## Staging Environment
+The staging environment mirrors production but allows seed data configuration.
+1. Copy `.env.example` to `.env` and fill in the required values.
+2. Run:
+   ```bash
+   docker compose -f docker-compose.staging.yml up --build
+   ```
+
+## Configuration Notes
+The API reads configuration from `appsettings.json` and environment variables.
+For staging/production, override these via environment variables:
+
+- `ConnectionStrings__DbConnection`
+- `JwtSettings__SecretKey` (min 32 chars)
+- `JwtSettings__Issuer`
+- `JwtSettings__Audience`
+
+Seed data is disabled outside development by default. You can enable it using:
+
+- `SeedData__Enabled=true`
+- `SeedData__CreateDefaultUser=true`
+- `SeedData__AddDefaultPictograms=true`
+
 ## Update the Database
 If you make changes to entities or DTOs, make sure to update the database:
 

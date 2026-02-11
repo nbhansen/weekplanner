@@ -11,6 +11,12 @@
 /Giraf.IntegrationTests/bin/
 /.idea/
 
+# Environment secrets
+.env
+
+# Test artifacts
+GirafTestDb_*.db
+
 /GirafAPI/wwwroot/images/
 !/GirafAPI/wwwroot/images/pictograms/default/
 !/GirafAPI/wwwroot/images/pictograms/default/*
