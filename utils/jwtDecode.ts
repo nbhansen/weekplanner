@@ -20,3 +20,15 @@ export function getUserIdFromToken(token: string): string {
   const userId = payload["sub"];
   return userId;
 }
+
+export function getOrgRolesFromToken(token: string): Record<string, string> {
+  try {
+    const arrayToken = token.split(".");
+    let parsed = base64.decode(arrayToken[1]);
+    parsed = parsed.substring(0, parsed.lastIndexOf("}") + 1);
+    const payload = JSON.parse(parsed);
+    return payload["org_roles"] ?? {};
+  } catch {
+    return {};
+  }
+}

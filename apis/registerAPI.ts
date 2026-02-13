@@ -1,8 +1,4 @@
-/**
- * Function for sending a request to the API endpoint to create a new user.
- * @param userData {object} - The user data to be sent to the API.
- */
-import { axiosInstance } from "./axiosConfig";
+import { coreAxiosInstance } from "./coreAxiosConfig";
 
 type CreateUserRequestProps = {
   email: string;
@@ -11,20 +7,33 @@ type CreateUserRequestProps = {
   lastName: string;
 };
 
-type CreateUserResponseProps = {
+type CoreRegisterResponse = {
+  id: number;
+  username: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  id: string;
+  first_name: string;
+  last_name: string;
+  display_name: string;
+  is_active: boolean;
 };
 
-export const createUserRequest = (userData: CreateUserRequestProps): Promise<CreateUserResponseProps> => {
-  return axiosInstance
-    .post(`/users`, userData)
-    .then((res) => res.data)
+/**
+ * Register a new user via GIRAF Core API.
+ * Core uses `username` as the login identifier — we map `email` to that.
+ */
+export const createUserRequest = (userData: CreateUserRequestProps): Promise<{ id: string }> => {
+  return coreAxiosInstance
+    .post<CoreRegisterResponse>(`/auth/register`, {
+      username: userData.email,
+      password: userData.password,
+      email: userData.email,
+      first_name: userData.firstName,
+      last_name: userData.lastName,
+    })
+    .then((res) => ({ id: String(res.data.id) }))
     .catch((error) => {
-      if (error.response) {
-        throw new Error(error.message || "Fejl: Kunne ikke oprette bruger");
-      }
+      const detail = error.response?.data?.detail;
+      const message = Array.isArray(detail) ? detail.join(", ") : detail || "Fejl: Kunne ikke oprette bruger";
+      throw new Error(message);
     });
 };

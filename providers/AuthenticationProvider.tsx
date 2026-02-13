@@ -8,10 +8,12 @@ import * as SecureStore from "expo-secure-store";
 import { setSettingsValue } from "../utils/settingsUtils";
 import { RegisterForm } from "../app/auth/register";
 import { setBearer } from "../apis/axiosConfig";
+import { setCoreBearer } from "../apis/coreAxiosConfig";
 
 type AuthenticationProviderValues = {
   jwt: string | null;
   userId: string | null;
+  orgRoles: Record<string, string>;
   isAuthenticated: () => boolean;
   register: (form: RegisterForm) => Promise<string | null>;
   login: (email: string, password: string) => Promise<void>;
@@ -29,6 +31,7 @@ const AuthenticationContext = createContext<AuthenticationProviderValues | undef
 const AuthenticationProvider = ({ children }: { children: React.ReactNode }) => {
   const [jwt, setJwt] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [orgRoles, setOrgRoles] = useState<Record<string, string>>({});
   const { addToast } = useToast();
 
   const isAuthenticated = useCallback(() => {
@@ -52,13 +55,16 @@ const AuthenticationProvider = ({ children }: { children: React.ReactNode }) => 
     async (email: string, password: string) => {
       try {
         const res = await tryLogin(email, password);
-        if (res.token) {
-          setBearer(res.token);
-          setJwt(res.token);
-          setUserId(getUserIdFromToken(res.token));
+        if (res.access) {
+          // Set bearer on both axios instances (weekplanner backend + Core)
+          setBearer(res.access);
+          setCoreBearer(res.access);
+          setJwt(res.access);
+          setUserId(getUserIdFromToken(res.access));
+          setOrgRoles(res.org_roles ?? {});
           router.replace("/auth/profile/profilepage");
         } else {
-          addToast({ message: "Toast er ikke blevet modtaget", type: "error" });
+          addToast({ message: "Token er ikke blevet modtaget", type: "error" });
         }
       } catch (e) {
         addToast({ message: (e as Error).message, type: "error" });
@@ -74,6 +80,7 @@ const AuthenticationProvider = ({ children }: { children: React.ReactNode }) => 
     await setSettingsValue("Remember me", false);
     setJwt(null);
     setUserId(null);
+    setOrgRoles({});
     router.dismissAll();
     router.replace("/auth/login");
   }, []);
@@ -83,6 +90,7 @@ const AuthenticationProvider = ({ children }: { children: React.ReactNode }) => 
       value={{
         userId,
         jwt,
+        orgRoles,
         isAuthenticated,
         register,
         login,
