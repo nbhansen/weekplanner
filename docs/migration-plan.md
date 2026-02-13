@@ -1,10 +1,11 @@
 # Weekplanner Migration to giraf-core - Progress Tracker
 
 **Last Updated:** 2026-02-13
-**Status:** Phase 0.5 complete, ready for Phase 1
-**Test Results:** ✅ 103/103 passing (100%)
-**Git Branch:** `main`
-**Latest Commit:** `889f19b` feat(auth): migrate to Core JWT validation with org_roles claim
+**Status:** Phases 1-3 complete, ready for Phase 4
+**Test Results:** ✅ Backend 103/103 passing (100%)
+**Git Branches:**
+- Backend: `main` @ `801c27b` docs(backend): update README for Core JWT validation
+- Frontend: `master` @ `426e294` feat(frontend): migrate authentication to giraf-core
 
 ---
 
@@ -67,7 +68,9 @@ Implemented JWT claim-based authorization that reads `org_roles` from Core-issue
 
 ## Next Steps
 
-### Phase 1: Frontend — Add Core API Client + Migrate Auth
+### ✅ Phase 1: Frontend — Add Core API Client + Migrate Auth (2026-02-13)
+**Status:** COMPLETE
+**Commit:** `426e294` feat(frontend): migrate authentication to giraf-core
 **Goal:** Frontend authenticates with Core instead of weekplanner backend.
 
 **Files to create:**
