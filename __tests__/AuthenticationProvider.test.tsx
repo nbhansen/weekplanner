@@ -3,9 +3,17 @@ import { tryLogin } from "../apis/authorizationAPI";
 import { useToast } from "../providers/ToastProvider";
 import AuthenticationProvider, { useAuthentication } from "../providers/AuthenticationProvider";
 import { router } from "expo-router";
+import { setBearer } from "../apis/axiosConfig";
+import { setCoreBearer } from "../apis/coreAxiosConfig";
 
 jest.mock("../apis/registerAPI");
 jest.mock("../apis/authorizationAPI");
+jest.mock("../apis/axiosConfig", () => ({
+  setBearer: jest.fn(),
+}));
+jest.mock("../apis/coreAxiosConfig", () => ({
+  setCoreBearer: jest.fn(),
+}));
 jest.mock("expo-router", () => ({
   router: {
     replace: jest.fn(),
@@ -20,6 +28,18 @@ jest.mock("@react-native-async-storage/async-storage", () =>
   require("@react-native-async-storage/async-storage/jest/async-storage-mock")
 );
 
+jest.mock("../utils/jwtDecode", () => ({
+  getUserIdFromToken: jest.fn((token: string) => {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.sub;
+    } catch {
+      return null;
+    }
+  }),
+  isTokenExpired: jest.fn(() => false),
+}));
+
 describe("AuthenticationProvider and useAuthentication", () => {
   const addToast = jest.fn();
 
@@ -30,7 +50,11 @@ describe("AuthenticationProvider and useAuthentication", () => {
 
   it("should login and store a jwt token", async () => {
     const mockToken = "mockToken";
-    (tryLogin as jest.Mock).mockResolvedValueOnce({ token: mockToken });
+    (tryLogin as jest.Mock).mockResolvedValueOnce({
+      access: mockToken,
+      refresh: "mockRefreshToken",
+      org_roles: { "1": "owner" }
+    });
 
     const { result } = renderHook(() => useAuthentication(), {
       wrapper: AuthenticationProvider,
@@ -68,7 +92,7 @@ describe("AuthenticationProvider and useAuthentication", () => {
   });
 
   it("should add a toast if no token is returned on login", async () => {
-    (tryLogin as jest.Mock).mockResolvedValueOnce({ token: null }); // No token
+    (tryLogin as jest.Mock).mockResolvedValueOnce({ access: null }); // No access token
 
     const { result } = renderHook(() => useAuthentication(), {
       wrapper: AuthenticationProvider,
@@ -80,7 +104,7 @@ describe("AuthenticationProvider and useAuthentication", () => {
 
     await waitFor(() => {
       expect(addToast).toHaveBeenCalledWith({
-        message: "Toast er ikke blevet modtaget",
+        message: "Token er ikke blevet modtaget",
         type: "error",
       });
     });
@@ -160,5 +184,132 @@ describe("AuthenticationProvider and useAuthentication", () => {
       expect(error).toEqual(new Error("useAuthentication skal bruges i en AuthenticationProvider"));
     }
     consoleErrorMock.mockRestore();
+  });
+
+  // Core Auth Format Tests
+  it("should store org_roles from Core login response", async () => {
+    const mockOrgRoles = { "1": "owner", "5": "member", "10": "admin" };
+    (tryLogin as jest.Mock).mockResolvedValueOnce({
+      access: "mockAccessToken",
+      refresh: "mockRefreshToken",
+      org_roles: mockOrgRoles,
+    });
+
+    const { result } = renderHook(() => useAuthentication(), {
+      wrapper: AuthenticationProvider,
+    });
+
+    act(() => {
+      result.current.login("test@test.dk", "testTest1");
+    });
+
+    await waitFor(() => {
+      expect(result.current.orgRoles).toEqual(mockOrgRoles);
+    });
+  });
+
+  it("should set bearer on both weekplanner and Core axios instances", async () => {
+    const mockAccessToken = "mockAccessToken";
+    (tryLogin as jest.Mock).mockResolvedValueOnce({
+      access: mockAccessToken,
+      refresh: "mockRefreshToken",
+      org_roles: { "1": "owner" },
+    });
+
+    const { result } = renderHook(() => useAuthentication(), {
+      wrapper: AuthenticationProvider,
+    });
+
+    act(() => {
+      result.current.login("test@test.dk", "testTest1");
+    });
+
+    await waitFor(() => {
+      expect(setBearer).toHaveBeenCalledWith(mockAccessToken);
+      expect(setCoreBearer).toHaveBeenCalledWith(mockAccessToken);
+    });
+  });
+
+  it("should extract userId from access token", async () => {
+    // Create a mock JWT with 'sub' claim (Core uses 'sub' for user ID)
+    const mockUserId = "user-123";
+    const mockPayload = { sub: mockUserId, exp: Date.now() / 1000 + 3600 };
+    const mockAccessToken = "header." + btoa(JSON.stringify(mockPayload)) + ".signature";
+
+    (tryLogin as jest.Mock).mockResolvedValueOnce({
+      access: mockAccessToken,
+      refresh: "mockRefreshToken",
+      org_roles: { "1": "owner" },
+    });
+
+    const { result } = renderHook(() => useAuthentication(), {
+      wrapper: AuthenticationProvider,
+    });
+
+    act(() => {
+      result.current.login("test@test.dk", "testTest1");
+    });
+
+    await waitFor(() => {
+      expect(result.current.userId).toBe(mockUserId);
+    });
+  });
+
+  it("should handle Core login with all fields (access, refresh, org_roles)", async () => {
+    const mockUserId = "user-456";
+    const mockPayload = { sub: mockUserId, exp: Date.now() / 1000 + 3600 };
+    const mockAccessToken = "header." + btoa(JSON.stringify(mockPayload)) + ".signature";
+    const mockRefreshToken = "refresh.token.here";
+    const mockOrgRoles = { "2": "admin", "7": "member" };
+
+    (tryLogin as jest.Mock).mockResolvedValueOnce({
+      access: mockAccessToken,
+      refresh: mockRefreshToken,
+      org_roles: mockOrgRoles,
+    });
+
+    const { result } = renderHook(() => useAuthentication(), {
+      wrapper: AuthenticationProvider,
+    });
+
+    act(() => {
+      result.current.login("test@test.dk", "testTest1");
+    });
+
+    await waitFor(() => {
+      // Verify all state is set correctly
+      expect(result.current.jwt).toBe(mockAccessToken);
+      expect(result.current.userId).toBe(mockUserId);
+      expect(result.current.orgRoles).toEqual(mockOrgRoles);
+      expect(result.current.isAuthenticated()).toBe(true);
+
+      // Verify both axios instances have bearer set
+      expect(setBearer).toHaveBeenCalledWith(mockAccessToken);
+      expect(setCoreBearer).toHaveBeenCalledWith(mockAccessToken);
+
+      // Verify navigation
+      expect(router.replace).toHaveBeenCalledWith("/auth/profile/profilepage");
+    });
+  });
+
+  it("should handle empty org_roles gracefully", async () => {
+    (tryLogin as jest.Mock).mockResolvedValueOnce({
+      access: "mockAccessToken",
+      refresh: "mockRefreshToken",
+      org_roles: undefined, // User has no org memberships yet
+    });
+
+    const { result } = renderHook(() => useAuthentication(), {
+      wrapper: AuthenticationProvider,
+    });
+
+    act(() => {
+      result.current.login("test@test.dk", "testTest1");
+    });
+
+    await waitFor(() => {
+      expect(result.current.orgRoles).toEqual({});
+      expect(result.current.isAuthenticated()).toBe(true);
+    });
   });
 });

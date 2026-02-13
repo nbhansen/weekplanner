@@ -12,13 +12,17 @@ export function isTokenExpired(token: string): boolean {
 }
 
 export function getUserIdFromToken(token: string): string {
-  const arrayToken = token.split(".");
-  let parsed = base64.decode(arrayToken[1]);
-  parsed = parsed.substring(0, parsed.lastIndexOf("}") + 1);
-  const payload = JSON.parse(parsed);
+  try {
+    const arrayToken = token.split(".");
+    let parsed = base64.decode(arrayToken[1]);
+    parsed = parsed.substring(0, parsed.lastIndexOf("}") + 1);
+    const payload = JSON.parse(parsed);
 
-  const userId = payload["sub"];
-  return userId;
+    const userId = payload["sub"];
+    return userId;
+  } catch {
+    return "";
+  }
 }
 
 export function getOrgRolesFromToken(token: string): Record<string, string> {
