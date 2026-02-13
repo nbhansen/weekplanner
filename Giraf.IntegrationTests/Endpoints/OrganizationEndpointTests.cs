@@ -110,7 +110,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var scope = factory.Services.CreateScope();
             seeder.SeedUsers(scope.ServiceProvider.GetRequiredService<UserManager<GirafUser>>());
             var client = factory.CreateClient();
-            
+
             client.AttachClaimsToken(scope, seeder.Users["member"]);
 
             var nonExistentOrganizationId = 1;
@@ -119,7 +119,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var response = await client.GetAsync($"/organizations/{nonExistentOrganizationId}");
 
             // Assert
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
         #endregion
@@ -191,9 +191,9 @@ namespace Giraf.IntegrationTests.Endpoints
             var scope = factory.Services.CreateScope();
             seeder.SeedUsers(scope.ServiceProvider.GetRequiredService<UserManager<GirafUser>>());
             var client = factory.CreateClient();
-            
+
             client.AttachClaimsToken(scope, seeder.Users["owner"]);
-            
+
             int nonExistentOrgId = 999;
 
             // Act
@@ -201,7 +201,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var response = await client.PutAsync($"/organizations/{nonExistentOrgId}/change-name?newName={newName}", null);
 
             // Assert
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
         #endregion
@@ -248,16 +248,16 @@ namespace Giraf.IntegrationTests.Endpoints
             var scope = factory.Services.CreateScope();
             seeder.SeedUsers(scope.ServiceProvider.GetRequiredService<UserManager<GirafUser>>());
             var client = factory.CreateClient();
-            
+
             client.AttachClaimsToken(scope, seeder.Users["owner"]);
-            
+
             var nonExistentOrgId = 9999;
 
             // Act
             var response = await client.DeleteAsync($"/organizations/{nonExistentOrgId}");
 
             // Assert
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
         #endregion
@@ -324,7 +324,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var scope = factory.Services.CreateScope();
             seeder.SeedUsers(scope.ServiceProvider.GetRequiredService<UserManager<GirafUser>>());
             var client = factory.CreateClient();
-            
+
             client.AttachClaimsToken(scope, seeder.Users["admin"]);
 
             var nonExistentOrgId = 9999; // Using an ID that doesn't exist in the database
@@ -334,7 +334,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var response = await client.PutAsync($"/organizations/{nonExistentOrgId}/remove-user/{userId}", null);
 
             // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
         #endregion

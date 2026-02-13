@@ -215,7 +215,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var scope = factory.Services.CreateScope();
             seeder.SeedUsers(scope.ServiceProvider.GetRequiredService<UserManager<GirafUser>>());
             var client = factory.CreateClient();
-            
+
             client.AttachClaimsToken(scope, seeder.Users["admin"]);
 
             var createCitizenDto = new CreateCitizenDTO("New", "Citizen");
@@ -224,7 +224,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var response = await client.PostAsJsonAsync("/citizens/999/add-citizen", createCitizenDto);
 
             // Assert
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
         #endregion

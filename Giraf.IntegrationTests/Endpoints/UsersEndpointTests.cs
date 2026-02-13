@@ -125,7 +125,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var response = await client.PutAsJsonAsync($"/users/{nonExistentUserId}", updateUserDto);
 
             // Assert
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
         #endregion
@@ -176,7 +176,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var response = await client.GetAsync($"/users/{nonExistentUserId}");
 
             // Assert
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
         #endregion
@@ -236,7 +236,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var response = await client.PutAsJsonAsync($"/users/{nonExistentUserId}/change-password", updatePasswordDto);
 
             // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
         #endregion
@@ -294,7 +294,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var response = await client.PutAsJsonAsync($"/users/{nonExistentUserId}/change-username", updateUsernameDto);
 
             // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
         #endregion
@@ -358,7 +358,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var response = await client.DeleteAsync($"/users/{nonExistentUserId}");
 
             // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
         #endregion

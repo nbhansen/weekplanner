@@ -104,14 +104,14 @@ namespace Giraf.IntegrationTests.Endpoints
             factory.SeedDb(scope, seeder);
             var client = factory.CreateClient();
             client.AttachClaimsToken(scope, seeder.Users["member"]);
-            
+
             int nonExistentOrganizationId = 9999;
 
             // Act
             var response = await client.GetAsync($"/grades/org/{nonExistentOrganizationId}");
 
             // Assert
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
         #endregion
@@ -157,9 +157,9 @@ namespace Giraf.IntegrationTests.Endpoints
             var scope = factory.Services.CreateScope();
             seeder.SeedUsers(scope.ServiceProvider.GetRequiredService<UserManager<GirafUser>>());
             var client = factory.CreateClient();
-            
+
             client.AttachClaimsToken(scope, seeder.Users["admin"]);
-            
+
             int nonExistentOrganizationId = 9999;
 
             var newGradeDto = new CreateGradeDTO
@@ -171,7 +171,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var response = await client.PostAsJsonAsync($"/grades/{nonExistentOrganizationId}", newGradeDto);
 
             // Assert
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         }
 
         #endregion
