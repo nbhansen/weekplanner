@@ -43,18 +43,15 @@ internal class GirafWebApplicationFactory : WebApplicationFactory<Program>
             // Configure JwtSettings for testing
             services.Configure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, options =>
             {
-                options.TokenValidationParameters.ValidIssuer = "TestIssuer";
-                options.TokenValidationParameters.ValidAudience = "TestAudience";
+                options.TokenValidationParameters.ValidateIssuer = false;
+                options.TokenValidationParameters.ValidateAudience = false;
                 options.TokenValidationParameters.IssuerSigningKey =
                     new SymmetricSecurityKey(Encoding.UTF8.GetBytes("ThisIsASecretKeyForTestingPurposes!"));
             });
 
-            // Add authorization policies
-            services.AddScoped<IAuthorizationHandler, OrgMemberAuthorizationHandler>();
-            services.AddScoped<IAuthorizationHandler, OrgAdminAuthorizationHandler>();
-            services.AddScoped<IAuthorizationHandler, OrgOwnerAuthorizationHandler>();
-            services.AddScoped<IAuthorizationHandler, OwnDataAuthorizationHandler>();
-            
+            // Add authorization — single JWT claim-based handler
+            services.AddScoped<IAuthorizationHandler, JwtOrgRoleHandler>();
+
             services.AddAuthorization(options =>
             {
                 options.AddPolicy("OrganizationMember", policy =>
@@ -63,7 +60,7 @@ internal class GirafWebApplicationFactory : WebApplicationFactory<Program>
                     policy.Requirements.Add(new OrgAdminRequirement()));
                 options.AddPolicy("OrganizationOwner", policy =>
                     policy.Requirements.Add(new OrgOwnerRequirement()));
-                options.AddPolicy("OwnData", policy => 
+                options.AddPolicy("OwnData", policy =>
                     policy.Requirements.Add(new OwnDataRequirement()));
             });
 

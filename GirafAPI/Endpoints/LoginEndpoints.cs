@@ -39,12 +39,11 @@ namespace GirafAPI.Endpoints
                             new Claim(ClaimTypes.Name, user.UserName)
                         };
 
-                        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Value.SecretKey));
+                        var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? jwtSettings.Value.SecretKey;
+                        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
                         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
                         var token = new JwtSecurityToken(
-                            issuer: jwtSettings.Value.Issuer,
-                            audience: jwtSettings.Value.Audience,
                             claims: claims,
                             expires: DateTime.UtcNow.AddHours(1),
                             signingCredentials: creds);

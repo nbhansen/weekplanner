@@ -56,22 +56,14 @@ namespace GirafAPI.Extensions
                 throw new InvalidOperationException("JwtSettings configuration is missing.");
             }
 
-            if (string.IsNullOrWhiteSpace(jwtSettings.SecretKey) || jwtSettings.SecretKey.Length < 32)
+            // Allow env var override so all backends share the same secret
+            var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET") ?? jwtSettings.SecretKey;
+            if (string.IsNullOrWhiteSpace(secretKey))
             {
-                throw new InvalidOperationException("JwtSettings:SecretKey must be at least 32 characters.");
+                throw new InvalidOperationException("JwtSettings:SecretKey or JWT_SECRET env var is required.");
             }
 
-            if (string.IsNullOrWhiteSpace(jwtSettings.Issuer))
-            {
-                throw new InvalidOperationException("JwtSettings:Issuer is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(jwtSettings.Audience))
-            {
-                throw new InvalidOperationException("JwtSettings:Audience is required.");
-            }
-
-            var key = Encoding.UTF8.GetBytes(jwtSettings!.SecretKey);
+            var key = Encoding.UTF8.GetBytes(secretKey);
 
             services.AddAuthentication(options =>
             {
@@ -84,10 +76,8 @@ namespace GirafAPI.Extensions
                 options.SaveToken = true;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = true,
-                    ValidIssuer = jwtSettings.Issuer,
-                    ValidateAudience = true,
-                    ValidAudience = jwtSettings.Audience,
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ValidateLifetime = true
@@ -99,11 +89,8 @@ namespace GirafAPI.Extensions
 
         public static IServiceCollection ConfigureAuthorizationPolicies(this IServiceCollection services)
         {
-            services.AddScoped<IAuthorizationHandler, OrgMemberAuthorizationHandler>();
-            services.AddScoped<IAuthorizationHandler, OrgAdminAuthorizationHandler>();
-            services.AddScoped<IAuthorizationHandler, OrgOwnerAuthorizationHandler>();
-            services.AddScoped<IAuthorizationHandler, OwnDataAuthorizationHandler>();
-            
+            services.AddScoped<IAuthorizationHandler, JwtOrgRoleHandler>();
+
             services.AddAuthorization(options =>
             {
                 options.AddPolicy("OrganizationMember", policy =>
@@ -112,7 +99,7 @@ namespace GirafAPI.Extensions
                     policy.Requirements.Add(new OrgAdminRequirement()));
                 options.AddPolicy("OrganizationOwner", policy =>
                     policy.Requirements.Add(new OrgOwnerRequirement()));
-                options.AddPolicy("OwnData", policy => 
+                options.AddPolicy("OwnData", policy =>
                     policy.Requirements.Add(new OwnDataRequirement()));
             });
 
