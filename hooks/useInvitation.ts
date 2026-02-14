@@ -12,7 +12,7 @@ export default function useInvitation() {
   const queryKey = [userId!, "Invitation"];
 
   const fetchByUser = useQuery({
-    queryFn: async () => fetchInvitationByUserRequest(userId!),
+    queryFn: async () => fetchInvitationByUserRequest(),
     queryKey,
     enabled: !!userId,
   });
@@ -21,7 +21,7 @@ export default function useInvitation() {
     mutationFn: ({ invitationId, isAccepted }: { invitationId: number; isAccepted: boolean }) =>
       acceptInvitationRequest(invitationId, isAccepted),
 
-    onMutate: async ({ invitationId, isAccepted }) => {
+    onMutate: async ({ invitationId }) => {
       await queryClient.cancelQueries({ queryKey });
       const previousInvitations = queryClient.getQueryData(queryKey);
 
@@ -37,7 +37,7 @@ export default function useInvitation() {
         queryClient.setQueryData(queryKey, context.previousInvitations);
       }
     },
-    onSuccess(data, variables, context) {
+    onSuccess() {
       queryClient.invalidateQueries({ queryKey: [userId, "OrganisationOverview"] });
     },
   });
@@ -46,12 +46,11 @@ export default function useInvitation() {
     mutationFn: async ({
       orgId,
       receiverEmail,
-      senderId,
     }: {
       orgId: number;
       receiverEmail: string;
-      senderId: string;
-    }) => createInvitationRequest(orgId, receiverEmail, senderId),
+      senderId?: string;
+    }) => createInvitationRequest(orgId, receiverEmail),
   });
 
   return {

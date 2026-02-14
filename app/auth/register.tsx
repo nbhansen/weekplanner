@@ -76,7 +76,7 @@ const RegisterScreen: React.FC = () => {
   };
 
   const handleSubmitPicture = async () => {
-    await uploadProfileImageRequest(userId, imageUri)
+    await uploadProfileImageRequest(imageUri)
       .then(() => {
         router.replace("/auth/login");
       })

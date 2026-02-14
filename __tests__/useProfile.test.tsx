@@ -36,6 +36,9 @@ jest.mock("../providers/AuthenticationProvider", () => ({
 }));
 
 jest.mock("../apis/profileAPI", () => ({
+  fetchProfileRequest: jest.fn().mockImplementation(() => {
+    return Promise.resolve({ email: "john@test.com", firstName: "John", lastName: "Doe" });
+  }),
   deleteUserRequest: jest.fn().mockImplementation(() => {
     return Promise.resolve();
   }),
@@ -67,7 +70,7 @@ test("deleteUser should handle edge case when userId is undefined", async () => 
   });
 
   await waitFor(() => {
-    expect(result.current.deleteUser.error).toBeDefined();
+    expect(result.current.deleteUser.data).toBeUndefined();
   });
 });
 

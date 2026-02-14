@@ -17,7 +17,7 @@ const useOrganisationOverview = () => {
   const queryKey = [userId!, "OrganisationOverview"];
 
   const fetchOrgOverview = useQuery<OrgOverviewDTO[]>({
-    queryFn: async () => fetchAllOrganisationsRequest(userId!),
+    queryFn: async () => fetchAllOrganisationsRequest(),
     queryKey,
     enabled: !!userId,
   });
@@ -37,7 +37,7 @@ const useOrganisationOverview = () => {
   });
 
   const createOrganisation = useMutation({
-    mutationFn: (orgName: string) => createOrganisationsRequest(userId!, orgName),
+    mutationFn: (orgName: string) => createOrganisationsRequest(orgName),
     onMutate: async (newOrgName) => {
       await queryClient.cancelQueries({ queryKey });
 

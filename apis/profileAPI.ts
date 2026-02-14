@@ -1,63 +1,50 @@
 import { ChangePasswordDTO, UpdateProfileDTO, DeleteUserDTO } from "../hooks/useProfile";
-import { axiosInstance } from "./axiosConfig";
+import { coreAxiosInstance } from "./coreAxiosConfig";
+import { CoreUserOut, mapCoreUser } from "./coreApiMappers";
 
-export const fetchProfileRequest = async (userId: string | null) => {
-  if (userId === null) {
-    throw new Error("FATAL FEJL: Bruger-ID er ikke korrekt initialiseret i din session.");
-  }
-
-  return await axiosInstance
-    .get(`/users/${userId}`)
-    .then((res) => res.data)
+export const fetchProfileRequest = async () => {
+  return await coreAxiosInstance
+    .get<CoreUserOut>(`/users/me`)
+    .then((res) => mapCoreUser(res.data))
     .catch(() => {
       throw new Error("Fejl: Kunne ikke hente din profil");
     });
 };
 
-export const updateProfileRequest = (userId: string | null, data: UpdateProfileDTO) => {
-  if (userId === null) {
-    throw new Error("FATAL FEJL: Bruger-ID er ikke korrekt initialiseret i din session.");
-  }
-
-  return axiosInstance
-    .put(`/users/${userId}`, data)
-    .then((res) => res.data)
+export const updateProfileRequest = (data: UpdateProfileDTO) => {
+  return coreAxiosInstance
+    .put(`/users/me`, {
+      first_name: data.firstName,
+      last_name: data.lastName,
+    })
+    .then((res) => mapCoreUser(res.data))
     .catch(() => {
       throw new Error("Fejl: Kunne ikke opdatere din profil");
     });
 };
 
-export const changePasswordRequest = (userId: string | null, data: ChangePasswordDTO) => {
-  if (userId === null) {
-    throw new Error("FATAL FEJL: Bruger-ID er ikke korrekt initialiseret i din session.");
-  }
-
-  return axiosInstance
-    .put(`/users/${userId}/change-password`, data)
+export const changePasswordRequest = (data: ChangePasswordDTO) => {
+  return coreAxiosInstance
+    .put(`/users/me/password`, {
+      old_password: data.oldPassword,
+      new_password: data.newPassword,
+    })
     .then((res) => res.data)
     .catch(() => {
       throw new Error("Fejl: Kunne ikke opdatere din adgangskode");
     });
 };
 
-export const deleteUserRequest = (userId: string | null, data: DeleteUserDTO) => {
-  if (userId === null) {
-    throw new Error("FATAL FEJL: Bruger-ID er ikke korrekt initialiseret i din session.");
-  }
-
-  return axiosInstance
-    .delete(`/users/${userId}`, { data })
+export const deleteUserRequest = () => {
+  return coreAxiosInstance
+    .delete(`/users/me`)
     .then((res) => res.data)
     .catch(() => {
       throw new Error("Fejl: Kunne ikke slette din konto");
     });
 };
 
-export const uploadProfileImageRequest = (userId: string | null, imageUri: string | null) => {
-  if (userId === null) {
-    throw new Error("FATAL FEJL: Bruger-ID er ikke korrekt initialiseret i din session.");
-  }
-
+export const uploadProfileImageRequest = (imageUri: string | null) => {
   if (imageUri === null) {
     throw new Error("FATAL FEJL: Billede er ikke korrekt initialiseret.");
   }
@@ -69,10 +56,10 @@ export const uploadProfileImageRequest = (userId: string | null, imageUri: strin
   };
 
   const formData = new FormData();
-  formData.append("image", imageData as unknown as Blob);
+  formData.append("file", imageData as unknown as Blob);
 
-  return axiosInstance
-    .post(`/users/setProfilePicture?userId=${userId}`, formData, {
+  return coreAxiosInstance
+    .post(`/users/me/profile-picture`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     })
     .then((res) => res.data)

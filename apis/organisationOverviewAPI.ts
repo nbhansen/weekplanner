@@ -1,21 +1,20 @@
 import { OrgOverviewDTO } from "../hooks/useOrganisationOverview";
-import { axiosInstance } from "./axiosConfig";
+import { coreAxiosInstance } from "./coreAxiosConfig";
+import { CorePaginatedResponse } from "./coreApiMappers";
 
-export const fetchAllOrganisationsRequest = (userId: string) => {
-  if (!userId) {
-    throw new Error("FATAL FEJL: Bruger-ID er ikke korrekt initialiseret i din session.");
-  }
-
-  return axiosInstance
-    .get(`/organizations/user/${userId}`)
-    .then((res) => res.data)
+export const fetchAllOrganisationsRequest = (): Promise<OrgOverviewDTO[]> => {
+  return coreAxiosInstance
+    .get<CorePaginatedResponse<OrgOverviewDTO>>(`/organizations`, {
+      params: { limit: 1000 },
+    })
+    .then((res) => res.data.items)
     .catch(() => {
       throw new Error("Fejl: Der opstod et problem med at hente organisationer");
     });
 };
 
 export const deleteOrganisationRequest = (organisationId: number) => {
-  return axiosInstance
+  return coreAxiosInstance
     .delete(`/organizations/${organisationId}`)
     .then((res) => res.data)
     .catch(() => {
@@ -23,19 +22,9 @@ export const deleteOrganisationRequest = (organisationId: number) => {
     });
 };
 
-export const createOrganisationsRequest = (userId: string, orgName: string): Promise<OrgOverviewDTO> => {
-  return axiosInstance
-    .post(
-      `/organizations`,
-      {
-        name: orgName,
-      },
-      {
-        params: {
-          id: userId,
-        },
-      }
-    )
+export const createOrganisationsRequest = (orgName: string): Promise<OrgOverviewDTO> => {
+  return coreAxiosInstance
+    .post(`/organizations`, { name: orgName })
     .then((res) => res.data)
     .catch(() => {
       throw new Error("Fejl: Der opstod et problem med at oprette organisation");

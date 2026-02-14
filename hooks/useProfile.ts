@@ -30,13 +30,13 @@ export default function useProfile() {
   const queryClient = useQueryClient();
 
   const fetchProfile = useQuery<ProfileDTO>({
-    queryFn: async () => await fetchProfileRequest(userId),
+    queryFn: async () => await fetchProfileRequest(),
     queryKey: [userId, "Profile"],
     enabled: !!userId,
   });
 
   const updateProfile = useMutation({
-    mutationFn: async (data: UpdateProfileDTO) => updateProfileRequest(userId, data),
+    mutationFn: async (data: UpdateProfileDTO) => updateProfileRequest(data),
     onMutate: async (data) => {
       const { firstName, lastName } = data;
       await queryClient.cancelQueries({ queryKey: [userId, "Profile"] });
@@ -60,11 +60,11 @@ export default function useProfile() {
   });
 
   const changePassword = useMutation({
-    mutationFn: async (data: ChangePasswordDTO) => changePasswordRequest(userId, data),
+    mutationFn: async (data: ChangePasswordDTO) => changePasswordRequest(data),
   });
 
   const deleteUser = useMutation({
-    mutationFn: async (data: DeleteUserDTO) => deleteUserRequest(userId, data),
+    mutationFn: async (_data: DeleteUserDTO) => deleteUserRequest(),
   });
 
   return {

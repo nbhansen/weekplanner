@@ -21,7 +21,7 @@ const ChangeProfilePicture = () => {
   const { updateTimestamp } = useProfilePictureUpdater();
 
   const handleSubmitPicture = async () => {
-    await uploadProfileImageRequest(userId, imageUri)
+    await uploadProfileImageRequest(imageUri)
       .then(() => {
         updateTimestamp();
         router.back();

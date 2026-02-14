@@ -1,27 +1,29 @@
 import { Pictogram } from "../hooks/usePictogram";
-import { axiosInstance } from "./axiosConfig";
+import { coreAxiosInstance } from "./coreAxiosConfig";
+import { CorePaginatedResponse, CorePictogramOut, mapCorePictogram } from "./coreApiMappers";
 
 export const fetchAllPictogramsByOrg = (
   organizationId: number,
   pageSize: number,
   pageNumber: number
 ): Promise<Pictogram[]> => {
-  return axiosInstance
-    .get(`/pictograms/organizationId:int`, {
+  const offset = (pageNumber - 1) * pageSize;
+  return coreAxiosInstance
+    .get<CorePaginatedResponse<CorePictogramOut>>(`/pictograms`, {
       params: {
-        organizationId: organizationId,
-        currentPage: pageNumber.toString(),
-        pageSize: pageSize.toString(),
+        organization_id: organizationId,
+        limit: pageSize,
+        offset,
       },
     })
-    .then((res) => res.data)
+    .then((res) => res.data.items.map(mapCorePictogram))
     .catch(() => {
       throw new Error("Fejl: Der opstod et problem med at hente piktogrammer");
     });
 };
 
 export const deletePictogram = (pictogramId: number): Promise<void> => {
-  return axiosInstance
+  return coreAxiosInstance
     .delete(`/pictograms/${pictogramId}`)
     .then((res) => res.data)
     .catch(() => {
@@ -30,8 +32,8 @@ export const deletePictogram = (pictogramId: number): Promise<void> => {
 };
 
 export const uploadNewPictogram = (formData: FormData): Promise<void> => {
-  return axiosInstance
-    .post(`/pictograms`, formData, {
+  return coreAxiosInstance
+    .post(`/pictograms/upload`, formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },

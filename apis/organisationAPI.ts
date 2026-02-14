@@ -1,26 +1,62 @@
-import { axiosInstance } from "./axiosConfig";
+import { coreAxiosInstance } from "./coreAxiosConfig";
+import {
+  CoreCitizenOut,
+  CoreGradeOut,
+  CoreMemberOut,
+  CorePaginatedResponse,
+  mapCoreCitizen,
+  mapCoreGrade,
+  mapCoreMember,
+} from "./coreApiMappers";
+import { FullOrgDTO } from "../hooks/useOrganisation";
 
-export const fetchOrganisationRequest = (organisationId: number) => {
-  return axiosInstance
-    .get(`/organizations/${organisationId}`)
-    .then((res) => res.data)
+export const fetchOrganisationRequest = async (organisationId: number): Promise<FullOrgDTO> => {
+  const [orgRes, membersRes, citizensRes, gradesRes] = await Promise.all([
+    coreAxiosInstance.get(`/organizations/${organisationId}`),
+    coreAxiosInstance.get<CorePaginatedResponse<CoreMemberOut>>(
+      `/organizations/${organisationId}/members`,
+      { params: { limit: 1000 } }
+    ),
+    coreAxiosInstance.get<CorePaginatedResponse<CoreCitizenOut>>(
+      `/organizations/${organisationId}/citizens`,
+      { params: { limit: 1000 } }
+    ),
+    coreAxiosInstance.get<CorePaginatedResponse<CoreGradeOut>>(
+      `/organizations/${organisationId}/grades`,
+      { params: { limit: 1000 } }
+    ),
+  ]).catch(() => {
+    throw new Error("Fejl: Der opstod et problem med anmodningen");
+  });
+
+  return {
+    id: orgRes.data.id,
+    name: orgRes.data.name,
+    users: membersRes.data.items.map(mapCoreMember),
+    citizens: citizensRes.data.items.map(mapCoreCitizen),
+    grades: gradesRes.data.items.map((g: CoreGradeOut) => mapCoreGrade(g)),
+  };
+};
+
+export const createCitizenRequest = (
+  firstname: string,
+  lastName: string,
+  orgId: number
+): Promise<number> => {
+  return coreAxiosInstance
+    .post(`/organizations/${orgId}/citizens`, {
+      first_name: firstname,
+      last_name: lastName,
+    })
+    .then((res) => res.data.id)
     .catch(() => {
       throw new Error("Fejl: Der opstod et problem med anmodningen");
     });
 };
 
-export const createCitizenRequest = (firstname: string, lastName: string, orgId: number): Promise<number> => {
-  return axiosInstance
-    .post(`/citizens/${orgId}/add-citizen`, { firstName: firstname, lastName: lastName })
-    .then((res) => res.data)
-    .catch(() => {
-      throw new Error("Fejl: Der opstod et problem med anmodningen");
-    });
-};
-
-export const deleteCitizenRequest = (orgId: number, citizenId: number) => {
-  return axiosInstance
-    .delete(`/citizens/${orgId}/remove-citizen/${citizenId}`)
+export const deleteCitizenRequest = (_orgId: number, citizenId: number) => {
+  return coreAxiosInstance
+    .delete(`/citizens/${citizenId}`)
     .then((res) => res.data)
     .catch(() => {
       throw new Error("Fejl: Der opstod et problem med anmodningen");
@@ -28,8 +64,8 @@ export const deleteCitizenRequest = (orgId: number, citizenId: number) => {
 };
 
 export const deleteMemberRequest = (orgId: number, memberId: string) => {
-  return axiosInstance
-    .put(`/organizations/${orgId}/remove-user/${memberId}`)
+  return coreAxiosInstance
+    .delete(`/organizations/${orgId}/members/${memberId}`)
     .then((res) => res.data)
     .catch(() => {
       throw new Error("Fejl: Der opstod et problem med anmodningen");
@@ -37,8 +73,11 @@ export const deleteMemberRequest = (orgId: number, memberId: string) => {
 };
 
 export const updateCitizenRequest = (citizenId: number, firstName: string, lastName: string) => {
-  return axiosInstance
-    .put(`/citizens/${citizenId}`, { firstName, lastName })
+  return coreAxiosInstance
+    .patch(`/citizens/${citizenId}`, {
+      first_name: firstName,
+      last_name: lastName,
+    })
     .then((res) => res.data)
     .catch(() => {
       throw new Error("Fejl: Der opstod et problem med anmodningen");
@@ -46,8 +85,8 @@ export const updateCitizenRequest = (citizenId: number, firstName: string, lastN
 };
 
 export const updateOrganisationRequest = (orgId: number, name: string) => {
-  return axiosInstance
-    .put(`/organizations/${orgId}/change-name`, {}, { params: { newName: name } })
+  return coreAxiosInstance
+    .patch(`/organizations/${orgId}`, { name })
     .then((res) => res.data)
     .catch(() => {
       throw new Error("Fejl: Kunne ikke opdatere organisation");
@@ -55,8 +94,8 @@ export const updateOrganisationRequest = (orgId: number, name: string) => {
 };
 
 export const makeAdminRequest = (orgId: number, userId: string) => {
-  return axiosInstance
-    .post(`/organizations/${orgId}/add-admin/${userId}`)
+  return coreAxiosInstance
+    .patch(`/organizations/${orgId}/members/${userId}`, { role: "admin" })
     .then((res) => res.data)
     .catch(() => {
       throw new Error("Fejl: Kunne ikke gøre brugeren til admin");
@@ -64,8 +103,8 @@ export const makeAdminRequest = (orgId: number, userId: string) => {
 };
 
 export const removeAdminRequest = (orgId: number, userId: string) => {
-  return axiosInstance
-    .post(`/organizations/${orgId}/remove-admin/${userId}`)
+  return coreAxiosInstance
+    .patch(`/organizations/${orgId}/members/${userId}`, { role: "member" })
     .then((res) => res.data)
     .catch(() => {
       throw new Error("Fejl: Kunne ikke fjerne brugerens admin-rettigheder");
