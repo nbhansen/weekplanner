@@ -1,11 +1,11 @@
 # Weekplanner Migration to giraf-core - Progress Tracker
 
 **Last Updated:** 2026-02-14
-**Status:** Phases 1-4 complete, ready for Phase 5
-**Test Results:** ✅ Core 115 passing, Backend 103 passing, Frontend 131 passing (100%)
+**Status:** Phases 1-5 complete
+**Test Results:** ✅ Core 115 passing, Backend 21 passing, Frontend 131 passing (100%)
 **Git Branches:**
 - Core: `main` @ `49e97be` feat(core): add endpoints for weekplanner frontend migration
-- Backend: `main` @ `801c27b` docs(backend): update README for Core JWT validation
+- Backend: `main` @ current (Phase 5 complete)
 - Frontend: `master` @ `ed35bdc` feat(frontend): migrate shared entity calls to giraf-core
 
 ---
@@ -74,22 +74,6 @@ Implemented JWT claim-based authorization that reads `org_roles` from Core-issue
 **Commit:** `426e294` feat(frontend): migrate authentication to giraf-core
 **Goal:** Frontend authenticates with Core instead of weekplanner backend.
 
-**Files to create:**
-- `weekplan-frontend/apis/coreAxiosConfig.ts` — axios instance for Core API
-
-**Files to modify:**
-- `weekplan-frontend/.env` / `.env.example` — add `EXPO_PUBLIC_CORE_API_URL`
-- `weekplan-frontend/utils/globals.ts` — add `CORE_BASE_URL`
-- `weekplan-frontend/apis/authorizationAPI.ts` — login calls Core `POST /api/v1/token/pair`
-- `weekplan-frontend/providers/AuthenticationProvider.tsx` — store `org_roles`, set bearer on both axios instances
-- `weekplan-frontend/utils/jwtDecode.ts` — add `getOrgRolesFromToken()`
-- `weekplan-frontend/apis/registerAPI.ts` — register calls Core `POST /api/v1/auth/register`
-
-**Core login response format:**
-```json
-{ "access": "eyJ...", "refresh": "eyJ...", "org_roles": {"1": "owner", "5": "member"} }
-```
-
 **Verification:** User can register and log in. JWT comes from Core. Frontend still calls weekplanner backend for other operations.
 
 ---
@@ -109,74 +93,46 @@ Implemented JWT claim-based authorization that reads `org_roles` from Core-issue
 **Commits:** `49e97be` (Core) and `ed35bdc` (Frontend)
 **Goal:** Frontend calls Core directly for shared domain data.
 
-**Core extensions made (needed for frontend compatibility):**
-- `MemberOut` schema — added `first_name`, `last_name`, `email` fields
-- `PATCH /api/v1/organizations/{id}` — update organization name
-- `DELETE /api/v1/organizations/{id}` — delete organization (owner only)
-- `POST/DELETE /api/v1/organizations/{id}/grades/{gid}/citizens` — add/remove citizens from grades
-- `POST /api/v1/pictograms` — upload pictogram with image file
-
-**Frontend files created:**
-- `apis/coreApiMappers.ts` — snake_case ↔ camelCase mapping layer for all Core responses
-
-**Frontend files modified (12):**
-- `apis/userAPI.ts` — profile calls → Core `/api/v1/users/me`
-- `apis/organizationAPI.ts` — CRUD → Core `/api/v1/organizations/*`
-- `apis/invitationAPI.ts` — invitations → Core `/api/v1/invitations/*`
-- `apis/pictogramAPI.ts` — pictograms → Core `/api/v1/pictograms*`
-- `apis/gradeAPI.ts` — grades → Core `/api/v1/organizations/{orgId}/grades*`
-- `apis/citizenAPI.ts` — citizens → Core `/api/v1/organizations/{orgId}/citizens*`
-- `components/InvitationList.tsx` — adapted to Core response format
-- `components/GradeItem.tsx` — adapted to Core response format
-- `components/GradeSelector.tsx` — adapted to Core response format
-- `app/(app)/viewOrganization/[id].tsx` — adapted to Core response format
-- `app/(app)/viewCitizen/[id].tsx` — adapted to Core response format
-- `app/(app)/settings/index.tsx` — adapted to Core response format
-
 **Verification:** 115 Core tests + 131 Frontend tests all passing.
 
 ---
 
-### Phase 5: Backend — Slim Down to Activities Only
+### ✅ Phase 5: Backend — Slim Down to Activities Only (2026-02-14)
+**Status:** COMPLETE
 
-**5A: Add GirafCoreClient for Activity validation**
-- Create `GirafAPI/Clients/GirafCoreClient.cs` — HTTP client calling Core API
-- Create `GirafAPI/Clients/DTOs/` — minimal DTOs (CitizenDto, GradeDto, PictogramDto)
-- Update `ServiceExtensions.cs` — register `HttpClient` for Core
-- Update `appsettings.json` — add `GirafCore:BaseUrl`
+**What was done:**
+1. Made Activity FK columns explicit (CitizenId, GradeId, PictogramId)
+2. Created GirafCoreClient for validating entities exist in Core API
+3. Rewrote ActivityEndpoints to use explicit FKs + CoreClient validation
+4. Deleted all non-Activity entities, endpoints, mappings, and tests
+5. Removed ASP.NET Identity, simplified DbContext to plain `DbContext`
+6. Simplified test infrastructure (no UserManager, no Identity seeding)
 
-**5B: Make Activity FKs explicit and drop constraints**
-- Update `Activity.cs` — add `int? CitizenId`, `int? GradeId`, `int? PictogramId`
-- Update DTOs — include ID fields
-- Update `GirafDbContext.cs` — remove FK relationships
-- Update `ActivityMapping.cs` — use ID fields instead of navigation properties
-- Migration: `dotnet ef migrations add RemoveDomainEntityForeignKeys`
+**DTO breaking change:** `ActivityDTO.Pictogram` (object) → `ActivityDTO.PictogramId` (int?). Frontend resolves pictogram display data from its Core-fetched cache.
 
-**5C: Update Activity endpoints**
-- Replace `dbContext.Citizens.FindAsync()` → `girafCoreClient.GetCitizenAsync()`
-- Replace `dbContext.Grades.FindAsync()` → `girafCoreClient.GetGradeAsync()`
-- Query activities by `CitizenId`/`GradeId` column directly
+**Backend structure (final):**
+```
+weekplannerbackend/
+  GirafAPI/
+    Authorization/          # JwtOrgRoleHandler + requirement classes
+    Clients/                # ICoreClient + GirafCoreClient
+    Configuration/          # JwtSettings
+    Data/                   # GirafDbContext (Activities only)
+    Endpoints/              # ActivityEndpoints.cs (the ONLY endpoints)
+    Entities/Activities/    # Activity + DTOs (the ONLY entity)
+    Extensions/             # ServiceExtensions, ApplicationBuilderExtensions
+    Mapping/                # ActivityMapping.cs
+    Program.cs              # Thin startup
+```
 
-**5D: Remove unused entities and endpoints**
-Delete entire directories:
-- `GirafAPI/Entities/{Citizens,Organizations,Grades,Pictograms,Invitations,Users}/`
-- `GirafAPI/Endpoints/{Citizen,Organization,Grade,Pictogram,Invitation,User,Login}Endpoints.cs`
-- `GirafAPI/Mapping/{Citizen,Organization,Grade,Pictogram,Invitation,User}Mapping.cs`
-
-Update:
-- `Program.cs` — keep only `MapActivityEndpoints()`
-- `GirafDbContext.cs` — change to plain `DbContext`, keep only `DbSet<Activity>`
-- `GirafAPI.csproj` — remove `Microsoft.AspNetCore.Identity.EntityFrameworkCore`
-
-Migration: `dotnet ef migrations add RemoveLegacyDomainTables`
+**Test results:** 21 Activity-focused integration tests passing.
 
 ---
 
-### Phase 6: Documentation + CLAUDE.md
-Update:
-- `/home/nbhansen/dev/GIRAF/software/CLAUDE.md` — reflect new architecture
-- `weekplannerbackend/.github/copilot-instructions.md` — slim backend conventions
-- `weekplannerbackend/README.md` — setup instructions (must run Core first)
+### Phase 6: Frontend — Update for ActivityDTO change
+**Status:** TODO
+
+The frontend needs to update activity display code to resolve pictogram data from its Core-fetched cache instead of the `Pictogram` object that was previously embedded in the activity response.
 
 ---
 
@@ -193,7 +149,7 @@ weekplannerbackend/
     Program.cs                      # Thin startup
 ```
 
-The weekplanner backend becomes ~5-6 files. Everything else is Core's responsibility.
+The weekplanner backend is now ~10 files. Everything else is Core's responsibility.
 
 ---
 
