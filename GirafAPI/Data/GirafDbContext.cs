@@ -25,22 +25,25 @@ namespace GirafAPI.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder); 
+            base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<Citizen>()
-                .HasMany(c => c.Activities)        
-                .WithOne()                          
+                .HasMany(c => c.Activities)
+                .WithOne()
+                .HasForeignKey(a => a.CitizenId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             modelBuilder.Entity<Grade>()
                 .HasMany(g => g.Activities)
                 .WithOne()
+                .HasForeignKey(a => a.GradeId)
                 .OnDelete(DeleteBehavior.Cascade);
-            
+
             modelBuilder.Entity<Pictogram>()
-                .HasMany<Activity>()  
-                .WithOne(a => a.Pictogram)           
-                .OnDelete(DeleteBehavior.SetNull); 
+                .HasMany<Activity>()
+                .WithOne(a => a.Pictogram)
+                .HasForeignKey(a => a.PictogramId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

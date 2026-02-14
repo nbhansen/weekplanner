@@ -6,14 +6,20 @@ namespace GirafAPI.Entities.Activities;
 public class Activity
 {
     public int Id { get; set; }
-    
+
     public required DateOnly Date { get; set; }
-    
+
     public required TimeOnly StartTime { get; set; }
-    
+
     public required TimeOnly EndTime { get; set; }
 
     public bool IsCompleted { get; set; }
-    
+
+    public int? CitizenId { get; set; }
+
+    public int? GradeId { get; set; }
+
+    public int? PictogramId { get; set; }
+
     public Pictogram? Pictogram { get; set; }
 }
