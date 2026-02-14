@@ -226,8 +226,8 @@ describe("AuthenticationProvider and useAuthentication", () => {
 
     await waitFor(() => {
       expect(setBearer).toHaveBeenCalledWith(mockAccessToken);
-      expect(setCoreBearer).toHaveBeenCalledWith(mockAccessToken);
     });
+    expect(setCoreBearer).toHaveBeenCalledWith(mockAccessToken);
   });
 
   it("should extract userId from access token", async () => {
@@ -277,19 +277,16 @@ describe("AuthenticationProvider and useAuthentication", () => {
     });
 
     await waitFor(() => {
-      // Verify all state is set correctly
       expect(result.current.jwt).toBe(mockAccessToken);
-      expect(result.current.userId).toBe(mockUserId);
-      expect(result.current.orgRoles).toEqual(mockOrgRoles);
-      expect(result.current.isAuthenticated()).toBe(true);
-
-      // Verify both axios instances have bearer set
-      expect(setBearer).toHaveBeenCalledWith(mockAccessToken);
-      expect(setCoreBearer).toHaveBeenCalledWith(mockAccessToken);
-
-      // Verify navigation
-      expect(router.replace).toHaveBeenCalledWith("/auth/profile/profilepage");
     });
+    await waitFor(() => {
+      expect(result.current.isAuthenticated()).toBe(true);
+    });
+    expect(result.current.userId).toBe(mockUserId);
+    expect(result.current.orgRoles).toEqual(mockOrgRoles);
+    expect(setBearer).toHaveBeenCalledWith(mockAccessToken);
+    expect(setCoreBearer).toHaveBeenCalledWith(mockAccessToken);
+    expect(router.replace).toHaveBeenCalledWith("/auth/profile/profilepage");
   });
 
   it("should handle empty org_roles gracefully", async () => {
@@ -309,7 +306,7 @@ describe("AuthenticationProvider and useAuthentication", () => {
 
     await waitFor(() => {
       expect(result.current.orgRoles).toEqual({});
-      expect(result.current.isAuthenticated()).toBe(true);
     });
+    expect(result.current.isAuthenticated()).toBe(true);
   });
 });

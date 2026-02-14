@@ -47,7 +47,6 @@ const RegisterScreen: React.FC = () => {
   const { register } = useAuthentication();
   const { addToast } = useToast();
   const [label, setLabel] = useState<string>("");
-  const [userId, setUserId] = useState<string | null>("");
   const [imageUri, setImageUri] = useState<string | null>(null);
   const progressRef = useRef<ProgressStepsMethods>(null);
 
@@ -63,7 +62,6 @@ const RegisterScreen: React.FC = () => {
   const handleRegister = () => {
     register(getValues())
       .then((userId) => {
-        setUserId(userId);
         setLabel(`${getValues().firstName} ${getValues().lastName}`);
 
         if (userId) {

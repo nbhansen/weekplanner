@@ -1,4 +1,4 @@
-import { ChangePasswordDTO, UpdateProfileDTO, DeleteUserDTO } from "../hooks/useProfile";
+import { ChangePasswordDTO, UpdateProfileDTO } from "../hooks/useProfile";
 import { coreAxiosInstance } from "./coreAxiosConfig";
 import { CoreUserOut, mapCoreUser } from "./coreApiMappers";
 
