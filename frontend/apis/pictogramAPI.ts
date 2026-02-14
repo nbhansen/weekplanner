@@ -31,6 +31,15 @@ export const deletePictogram = (pictogramId: number): Promise<void> => {
     });
 };
 
+export const fetchPictogramById = (id: number): Promise<Pictogram> => {
+  return coreAxiosInstance
+    .get<CorePictogramOut>(`/pictograms/${id}`)
+    .then((res) => mapCorePictogram(res.data))
+    .catch(() => {
+      throw new Error("Fejl: Kunne ikke hente piktogram");
+    });
+};
+
 export const uploadNewPictogram = (formData: FormData): Promise<void> => {
   return coreAxiosInstance
     .post(`/pictograms/upload`, formData, {

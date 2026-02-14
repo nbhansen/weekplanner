@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, ScaleSize, ScaleSizeH, SharedStyles } from "../../../utils/SharedStyles";
 import { ActivityDTO } from "../../../hooks/useActivity";
-import { BASE_URL } from "../../../utils/globals";
+import { pictogramImageUrl } from "../../../utils/globals";
+import { usePictogramById } from "../../../hooks/usePictogramById";
 
 type ActivityItemProps = {
   item: ActivityDTO;
@@ -25,12 +26,13 @@ type ActivityItemProps = {
  */
 const ActivityItem: React.FC<ActivityItemProps> = ({ item, setImageUri, setModalVisible }) => {
   const [imageError, setImageError] = useState<boolean>(false);
+  const { data: pictogram, isLoading } = usePictogramById(item.pictogramId);
   const handleImagePress = (uri: string) => {
     setImageUri(uri);
     setModalVisible(true);
   };
 
-  const uri = `${BASE_URL}/${item.pictogram?.pictogramUrl}`;
+  const uri = pictogramImageUrl(pictogram?.pictogramUrl);
 
   return (
     <View
@@ -42,7 +44,9 @@ const ActivityItem: React.FC<ActivityItemProps> = ({ item, setImageUri, setModal
       ]}>
       <Text style={styles.timeText}>{item.startTime + "\n" + item.endTime}</Text>
       <View style={styles.iconContainer}>
-        {!imageError ? (
+        {isLoading ? (
+          <ActivityIndicator />
+        ) : !imageError && uri ? (
           <Pressable onPress={() => handleImagePress(uri)}>
             <Image
               source={{ uri }}

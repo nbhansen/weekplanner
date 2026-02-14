@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import useActivity, { ActivityDTO, FullActivityDTO } from "../../../hooks/useActivity";
@@ -18,7 +18,8 @@ import { colors, ScaleSizeH, ScaleSizeW } from "../../../utils/SharedStyles";
 import { Keyboard, ScrollView, TouchableWithoutFeedback, Image } from "react-native";
 import ProgressSteps, { ProgressStepsMethods } from "../../ProgressSteps";
 import SecondaryButton from "../../forms/SecondaryButton";
-import { BASE_URL } from "../../../utils/globals";
+import { pictogramImageUrl } from "../../../utils/globals";
+import { usePictogramById } from "../../../hooks/usePictogramById";
 import SafeArea from "../../SafeArea";
 
 const schema = z
@@ -26,12 +27,7 @@ const schema = z
     startTime: z.date(),
     endTime: z.date(),
     date: z.date(),
-    pictogram: z.object({
-      id: z.number(),
-      organizationId: z.number().nullable(),
-      pictogramName: z.string(),
-      pictogramUrl: z.string(),
-    }),
+    pictogramId: z.number(),
   })
   .superRefine((data, ctx) => {
     if (data.startTime > data.endTime) {
@@ -72,10 +68,13 @@ const ActivityEdit = ({ activity }: { activity: ActivityDTO }) => {
   const { updateActivity } = useActivity({ date: selectedDate });
   const { addToast } = useToast();
   const progressRef = useRef<ProgressStepsMethods>(null);
+  const { data: existingPictogram } = usePictogramById(activity.pictogramId);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const displayUrl = previewUrl ?? pictogramImageUrl(existingPictogram?.pictogramUrl);
 
   const {
     control,
-    getValues,
     setValue,
     handleSubmit,
     formState: { isValid, isSubmitting },
@@ -85,7 +84,7 @@ const ActivityEdit = ({ activity }: { activity: ActivityDTO }) => {
       startTime: new Date(dateAndTimeToISO(activity.date, activity.startTime)),
       endTime: new Date(dateAndTimeToISO(activity.date, activity.endTime)),
       date: new Date(dateAndTimeToISO(activity.date)),
-      pictogram: activity.pictogram,
+      pictogramId: activity.pictogramId,
     },
     mode: "onChange",
   });
@@ -105,7 +104,7 @@ const ActivityEdit = ({ activity }: { activity: ActivityDTO }) => {
       startTime: startTimeHHMM,
       endTime: endTimeHHMM,
       isCompleted: activity.isCompleted,
-      pictogram: formData.pictogram,
+      pictogramId: formData.pictogramId,
     };
 
     updateActivity
@@ -133,20 +132,25 @@ const ActivityEdit = ({ activity }: { activity: ActivityDTO }) => {
             </FormContainer>
           </ScrollView>
           <FormContainer style={{ paddingTop: 20 }}>
-            <Image
-              source={{ uri: `${BASE_URL}/${getValues("pictogram.pictogramUrl")}` }}
-              style={{
-                width: ScaleSizeH(75),
-                height: ScaleSizeH(75),
-                position: "absolute",
-                top: ScaleSizeH(-60),
-                right: ScaleSizeW(10),
-              }}
-            />
+            {displayUrl ? (
+              <Image
+                source={{ uri: displayUrl }}
+                style={{
+                  width: ScaleSizeH(75),
+                  height: ScaleSizeH(75),
+                  position: "absolute",
+                  top: ScaleSizeH(-60),
+                  right: ScaleSizeW(10),
+                }}
+              />
+            ) : null}
             <PictogramSelector
               organisationId={1}
-              selectedPictogram={getValues("pictogram").id}
-              setSelectedPictogram={(pictogram) => setValue("pictogram", pictogram, { shouldValidate: true })}
+              selectedPictogram={activity.pictogramId}
+              setSelectedPictogram={(pictogram) => {
+                setValue("pictogramId", pictogram.id, { shouldValidate: true });
+                setPreviewUrl(pictogramImageUrl(pictogram.pictogramUrl));
+              }}
             />
             <SubmitButton
               isValid={isValid}

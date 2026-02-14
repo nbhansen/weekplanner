@@ -43,13 +43,8 @@ export const deleteRequest = (id: number) => {
 };
 
 export const updateRequest = (activity: FullActivityDTO, activityId: number) => {
-  const { pictogram, ...deconstructedActivity } = activity;
-  const data = {
-    ...deconstructedActivity,
-    pictogramId: pictogram?.id,
-  };
   return axiosInstance
-    .put(`/weekplan/activity/${activityId}`, data)
+    .put(`/weekplan/activity/${activityId}`, activity)
     .then((res) => res.data)
     .catch(() => {
       throw new Error("Fejl: Kunne ikke opdatere aktivitet");
@@ -66,13 +61,8 @@ export const toggleActivityStatusRequest = (id: number, isCompleted: boolean) =>
 };
 
 export const createActivityCitizen = (activity: ActivityDTO, citizenId: number) => {
-  const { pictogram, ...deconstructedActivity } = activity;
-  const dataWithOnlyPictogramId = {
-    ...deconstructedActivity,
-    pictogramId: pictogram?.id,
-  };
   return axiosInstance
-    .post(`/weekplan/to-citizen/${citizenId}`, dataWithOnlyPictogramId)
+    .post(`/weekplan/to-citizen/${citizenId}`, activity)
     .then((res) => res.data)
     .catch(() => {
       throw new Error("Fejl: Kunne ikke oprette aktivitet");
@@ -80,13 +70,8 @@ export const createActivityCitizen = (activity: ActivityDTO, citizenId: number) 
 };
 
 export const createActivityGrade = (activity: ActivityDTO, gradeId: number) => {
-  const { pictogram, ...deconstructedActivity } = activity;
-  const data = {
-    ...deconstructedActivity,
-    pictogramId: pictogram?.id,
-  };
   return axiosInstance
-    .post(`/weekplan/to-grade/${gradeId}`, data)
+    .post(`/weekplan/to-grade/${gradeId}`, activity)
     .then((res) => res.data)
     .catch(() => {
       throw new Error("Fejl: Kunne ikke oprette aktivitet");

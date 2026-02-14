@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { router } from "expo-router";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Keyboard, TouchableWithoutFeedback, Image, View } from "react-native";
 import { z } from "zod";
@@ -18,19 +18,14 @@ import formatTimeHHMM from "../../../../utils/formatTimeHHMM";
 import { prettyDate } from "../../../../utils/prettyDate";
 import { colors, ScaleSizeH, ScaleSizeW } from "../../../../utils/SharedStyles";
 import ProgressSteps, { ProgressStepsMethods } from "../../../../components/ProgressSteps";
-import { BASE_URL } from "../../../../utils/globals";
+import { pictogramImageUrl } from "../../../../utils/globals";
 import SafeArea from "../../../../components/SafeArea";
 
 const schema = z
   .object({
     startTime: z.date(),
     endTime: z.date(),
-    pictogram: z.object({
-      id: z.number(),
-      organizationId: z.number().nullable(),
-      pictogramName: z.string(),
-      pictogramUrl: z.string(),
-    }),
+    pictogramId: z.number(),
   })
   .superRefine((data, ctx) => {
     if (data.startTime > data.endTime) {
@@ -56,11 +51,11 @@ const AddActivity = () => {
   const { useCreateActivity } = useActivity({ date: selectedDate });
   const { id } = useWeekplan();
   const progressRef = useRef<ProgressStepsMethods>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const {
     control,
     handleSubmit,
-    getValues,
     setValue,
     formState: { isSubmitting, isValid },
   } = useForm<FormData>({
@@ -68,7 +63,6 @@ const AddActivity = () => {
     defaultValues: {
       startTime: new Date(),
       endTime: new Date(),
-      pictogram: {},
     },
     mode: "onChange",
   });
@@ -79,10 +73,6 @@ const AddActivity = () => {
       return;
     }
 
-    if (getValues().pictogram === undefined) {
-      addToast({ message: "Fejl: Vælg venligst et piktogram", type: "error" });
-      return;
-    }
     const { startTime, endTime } = formData;
 
     const formattedStartTime = formatTimeHHMM(startTime);
@@ -96,7 +86,7 @@ const AddActivity = () => {
         endTime: formattedEndTime,
         date: selectedDate.toISOString().split("T")[0],
         isCompleted: false,
-        pictogram: formData.pictogram,
+        pictogramId: formData.pictogramId,
       },
     };
 
@@ -138,9 +128,9 @@ const AddActivity = () => {
             </FormContainer>
           </View>
           <FormContainer style={{ paddingTop: 20 }}>
-            {getValues("pictogram.pictogramUrl") && (
+            {previewUrl && (
               <Image
-                source={{ uri: `${BASE_URL}/${getValues("pictogram.pictogramUrl")}` }}
+                source={{ uri: previewUrl }}
                 style={{
                   width: ScaleSizeH(75),
                   height: ScaleSizeH(75),
@@ -152,9 +142,10 @@ const AddActivity = () => {
             )}
             <PictogramSelector
               organisationId={1}
-              selectedPictogram={getValues("pictogram").id}
+              selectedPictogram={undefined}
               setSelectedPictogram={(pictogram) => {
-                setValue("pictogram", pictogram, { shouldValidate: true });
+                setValue("pictogramId", pictogram.id, { shouldValidate: true });
+                setPreviewUrl(pictogramImageUrl(pictogram.pictogramUrl));
               }}
             />
 

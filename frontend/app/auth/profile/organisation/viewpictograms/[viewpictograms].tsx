@@ -2,7 +2,7 @@ import { FlatList } from "react-native-gesture-handler";
 import SearchBar from "../../../../../components/SearchBar";
 import { Image, Text, StyleSheet, TouchableOpacity, Alert, View } from "react-native";
 import { Fragment, useState } from "react";
-import { BASE_URL } from "../../../../../utils/globals";
+import { pictogramImageUrl } from "../../../../../utils/globals";
 import { colors, ScaleSize, ScaleSizeH, ScaleSizeW } from "../../../../../utils/SharedStyles";
 import { useLocalSearchParams } from "expo-router";
 import usePictogram, { Pictogram } from "../../../../../hooks/usePictogram";
@@ -46,7 +46,7 @@ const ViewPictograms = () => {
   const filteredPictures = useSearch(pictograms || [], searchQuery, (pictogram) => pictogram.pictogramName);
 
   const renderItem = ({ item }: { item: Pictogram }) => {
-    const uri = `${BASE_URL}/${item.pictogramUrl}`;
+    const uri = pictogramImageUrl(item.pictogramUrl);
     return (
       <TouchableOpacity style={styles.pictogramContainer} onLongPress={() => handleDelete(item)}>
         <Image source={{ uri }} resizeMode="contain" style={styles.pictogramImage} />

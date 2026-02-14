@@ -12,7 +12,6 @@ import {
   updateRequest,
 } from "../apis/activityAPI";
 import { useWeekplan } from "../providers/WeekplanProvider";
-import { Pictogram } from "./usePictogram";
 
 /* It's highly recommended to read the docs at https://tanstack.com/query/latest
  * to understand how to use react-query. This hook utilises optimistic updates
@@ -27,7 +26,7 @@ export type FullActivityDTO = {
   endTime: string;
   startTime: string;
   isCompleted: boolean;
-  pictogram?: Pictogram;
+  pictogramId?: number;
 };
 
 export const dateToQueryKey = (date: Date, isCitizen: boolean, id: number) => {
