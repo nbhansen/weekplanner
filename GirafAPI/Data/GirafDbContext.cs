@@ -41,7 +41,7 @@ namespace GirafAPI.Data
 
             modelBuilder.Entity<Pictogram>()
                 .HasMany<Activity>()
-                .WithOne(a => a.Pictogram)
+                .WithOne()
                 .HasForeignKey(a => a.PictogramId)
                 .OnDelete(DeleteBehavior.SetNull);
         }

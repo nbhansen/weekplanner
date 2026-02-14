@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Giraf.IntegrationTests.Utils;
 using Giraf.IntegrationTests.Utils.DbSeeders;
+using GirafAPI.Clients;
 using GirafAPI.Data;
 using GirafAPI.Entities.Activities.DTOs;
 using GirafAPI.Entities.Users;
@@ -88,7 +89,7 @@ namespace Giraf.IntegrationTests.Endpoints
         }
 
         [Fact]
-        public async Task GetActivitiesForCitizenOnDate_ReturnsNotFound_WhenCitizenDoesNotExist()
+        public async Task GetActivitiesForCitizenOnDate_ReturnsEmptyList_WhenCitizenDoesNotExist()
         {
             // Arrange
             var factory = new GirafWebApplicationFactory();
@@ -98,7 +99,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var client = factory.CreateClient();
 
             client.AttachClaimsToken(scope, seeder.Users["admin"]);
-            
+
             var date = DateTime.UtcNow.Date.ToString("yyyy-MM-dd");
             var nonExistentCitizenId = 999;
 
@@ -106,7 +107,10 @@ namespace Giraf.IntegrationTests.Endpoints
             var response = await client.GetAsync($"/weekplan/{nonExistentCitizenId}?date={date}");
 
             // Assert
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            response.EnsureSuccessStatusCode();
+            var activities = await response.Content.ReadFromJsonAsync<List<ActivityDTO>>();
+            Assert.NotNull(activities);
+            Assert.Empty(activities);
         }
 
         #endregion
@@ -124,7 +128,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var client = factory.CreateClient();
 
             client.AttachClaimsToken(scope, seeder.Users["member"]);
-            
+
             // Act
             var date = DateTime.UtcNow.Date.ToString("yyyy-MM-dd");
             int gradeId = seeder.Grades[0].Id;
@@ -148,7 +152,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var client = factory.CreateClient();
 
             client.AttachClaimsToken(scope, seeder.Users["member"]);
-            
+
             var date = DateTime.UtcNow.Date.ToString("yyyy-MM-dd");
             var nonExistentGradeId = 999;
 
@@ -198,7 +202,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var client = factory.CreateClient();
 
             client.AttachClaimsToken(scope, seeder.Users["member"]);
-            
+
             var nonExistentActivityId = 999;
 
             // Act
@@ -216,7 +220,7 @@ namespace Giraf.IntegrationTests.Endpoints
         public async Task CreateActivityForCitizen_ReturnsCreated_WhenCitizenExists()
         {
             // Arrange
-            var factory = new GirafWebApplicationFactory();
+            var factory = new GirafWebApplicationFactory(stubCoreClient: true);
             var seeder = new BaseCaseDb();
             var scope = factory.Services.CreateScope();
             factory.SeedDb(scope, seeder);
@@ -225,14 +229,13 @@ namespace Giraf.IntegrationTests.Endpoints
             client.AttachClaimsToken(scope, seeder.Users["member"]);
 
             int citizenId = seeder.Citizens[0].Id;
-            int pictogramId = seeder.Pictograms[0].Id;
 
             var newActivityDto = new CreateActivityDTO
             (
                 Date: DateOnly.FromDateTime(DateTime.UtcNow).ToString(),
                 StartTime: TimeOnly.FromDateTime(DateTime.UtcNow).ToString(),
                 EndTime: TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(1)).ToString(),
-                PictogramId: pictogramId // Provide the valid PictogramId
+                PictogramId: 1
             );
 
             // Act
@@ -249,16 +252,16 @@ namespace Giraf.IntegrationTests.Endpoints
         [Fact]
         public async Task CreateActivityForCitizen_ReturnsNotFound_WhenCitizenDoesNotExist()
         {
-            // Arrange
-            var factory = new GirafWebApplicationFactory();
+            // Arrange — stub CoreClient returns false for unknown citizens
+            var factory = new GirafWebApplicationFactory(stubCoreClient: true);
             var seeder = new OnlyUsersAndOrgDb();
             var scope = factory.Services.CreateScope();
             factory.SeedDb(scope, seeder);
             var client = factory.CreateClient();
 
             client.AttachClaimsToken(scope, seeder.Users["member"]);
-            
-            
+
+
             var nonExistentCitizenId = 999;
 
             var newActivityDto = new CreateActivityDTO
@@ -284,7 +287,7 @@ namespace Giraf.IntegrationTests.Endpoints
         public async Task CreateActivityForGrade_ReturnsCreated_WhenGradeExists()
         {
             // Arrange
-            var factory = new GirafWebApplicationFactory();
+            var factory = new GirafWebApplicationFactory(stubCoreClient: true);
             var seeder = new BaseCaseDb();
             var scope = factory.Services.CreateScope();
             factory.SeedDb(scope, seeder);
@@ -293,14 +296,13 @@ namespace Giraf.IntegrationTests.Endpoints
             client.AttachClaimsToken(scope, seeder.Users["admin"]);
 
             int gradeId = seeder.Grades.First().Id;
-            int pictogramId = seeder.Pictograms.First().Id;
 
             var newActivityDto = new CreateActivityDTO
             (
                 Date: DateOnly.FromDateTime(DateTime.UtcNow).ToString(),
                 StartTime: TimeOnly.FromDateTime(DateTime.UtcNow).ToString(),
                 EndTime: TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(1)).ToString(),
-                PictogramId: pictogramId // Provide the valid PictogramId
+                PictogramId: 1
             );
 
             // Act
@@ -318,14 +320,14 @@ namespace Giraf.IntegrationTests.Endpoints
         public async Task CreateActivityForGrade_ReturnsNotFound_WhenGradeDoesNotExist()
         {
             // Arrange
-            var factory = new GirafWebApplicationFactory();
+            var factory = new GirafWebApplicationFactory(stubCoreClient: true);
             var seeder = new OnlyUsersAndOrgDb();
             var scope = factory.Services.CreateScope();
             factory.SeedDb(scope, seeder);
             var client = factory.CreateClient();
 
             client.AttachClaimsToken(scope, seeder.Users["member"]);
-            
+
             var nonExistentGradeId = 999;
 
             var newActivityDto = new CreateActivityDTO
@@ -351,7 +353,7 @@ namespace Giraf.IntegrationTests.Endpoints
         public async Task UpdateActivity_ReturnsOk_WhenActivityExists()
         {
             // Arrange
-            var factory = new GirafWebApplicationFactory();
+            var factory = new GirafWebApplicationFactory(stubCoreClient: true);
             var seeder = new BaseCaseDb();
             var scope = factory.Services.CreateScope();
             factory.SeedDb(scope, seeder);
@@ -360,15 +362,14 @@ namespace Giraf.IntegrationTests.Endpoints
             client.AttachClaimsToken(scope, seeder.Users["member"]);
 
             int activityId = seeder.Activities[0].Id;
-            
+
             var updateActivityDto = new UpdateActivityDTO
             (
                 Date: DateOnly.FromDateTime(DateTime.UtcNow).ToString(),
                 StartTime: TimeOnly.FromDateTime(DateTime.UtcNow).ToString(),
                 EndTime: TimeOnly.FromDateTime(DateTime.UtcNow.AddHours(1)).ToString(),
                 IsCompleted: true,
-                PictogramId: 1,
-                CitizenId: 1
+                PictogramId: 1
             );
 
             // Act
@@ -398,7 +399,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var client = factory.CreateClient();
 
             client.AttachClaimsToken(scope, seeder.Users["member"]);
-            
+
             var nonExistentActivityId = 999;
 
             var newActivityDto = new CreateActivityDTO
@@ -460,7 +461,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var client = factory.CreateClient();
 
             client.AttachClaimsToken(scope, seeder.Users["member"]);
-            
+
             var nonExistentActivityId = 999;
 
             // Act
@@ -517,7 +518,7 @@ namespace Giraf.IntegrationTests.Endpoints
             var client = factory.CreateClient();
 
             client.AttachClaimsToken(scope, seeder.Users["admin"]);
-            
+
             var nonExistentActivityId = 999;
             var isComplete = true;
 
@@ -536,7 +537,7 @@ namespace Giraf.IntegrationTests.Endpoints
         public async Task AssignPictogram_ReturnsOk_WhenActivityAndPictogramExist()
         {
             // Arrange
-            var factory = new GirafWebApplicationFactory();
+            var factory = new GirafWebApplicationFactory(stubCoreClient: true);
             var seeder = new BaseCaseDb();
             var scope = factory.Services.CreateScope();
             factory.SeedDb(scope, seeder);
@@ -554,32 +555,23 @@ namespace Giraf.IntegrationTests.Endpoints
             response.EnsureSuccessStatusCode();
             var activityDto = await response.Content.ReadFromJsonAsync<ActivityDTO>();
             Assert.NotNull(activityDto);
-            Assert.NotNull(activityDto.pictogram);
-            Assert.Equal(pictogramId, activityDto.pictogram.Id);
+            Assert.Equal(pictogramId, activityDto.PictogramId);
         }
 
         [Fact]
         public async Task AssignPictogram_ReturnsNotFound_WhenActivityDoesNotExist()
         {
             // Arrange
-            var factory = new GirafWebApplicationFactory();
-            var seeder = new EmptyDb();
+            var factory = new GirafWebApplicationFactory(stubCoreClient: true);
+            var seeder = new OnlyUsersAndOrgDb();
             var scope = factory.Services.CreateScope();
-            seeder.SeedUsers(scope.ServiceProvider.GetRequiredService<UserManager<GirafUser>>());
-            seeder.SeedOrganization(
-                scope.ServiceProvider.GetRequiredService<GirafDbContext>(),
-                scope.ServiceProvider.GetRequiredService<UserManager<GirafUser>>(),
-                seeder.Users["owner"],
-                new List<GirafUser>(),
-                new List<GirafUser>()
-                );
-            seeder.SeedPictogram(scope.ServiceProvider.GetRequiredService<GirafDbContext>(), seeder.Organizations[0]);
+            factory.SeedDb(scope, seeder);
             var client = factory.CreateClient();
 
             client.AttachClaimsToken(scope, seeder.Users["admin"]);
-            
+
             var nonExistentActivityId = 999;
-            int pictogramId = seeder.Pictograms[0].Id;
+            int pictogramId = 1;
 
             // Act
             var response = await client.PostAsync($"/weekplan/activity/assign-pictogram/{nonExistentActivityId}/{pictogramId}", null);
@@ -592,27 +584,14 @@ namespace Giraf.IntegrationTests.Endpoints
         public async Task AssignPictogram_ReturnsNotFound_WhenPictogramDoesNotExist()
         {
             // Arrange
-            var factory = new GirafWebApplicationFactory();
-            var seeder = new EmptyDb();
+            var factory = new GirafWebApplicationFactory(stubCoreClient: true);
+            var seeder = new BaseCaseDb();
             var scope = factory.Services.CreateScope();
-            seeder.SeedUsers(scope.ServiceProvider.GetRequiredService<UserManager<GirafUser>>());
-            seeder.SeedOrganization(
-                scope.ServiceProvider.GetRequiredService<GirafDbContext>(),
-                scope.ServiceProvider.GetRequiredService<UserManager<GirafUser>>(),
-                seeder.Users["owner"],
-                new List<GirafUser>(),
-                new List<GirafUser>()
-            );
-            seeder.SeedCitizens(scope.ServiceProvider.GetRequiredService<GirafDbContext>(), seeder.Organizations[0]);
-            seeder.SeedPictogram(scope.ServiceProvider.GetRequiredService<GirafDbContext>(), seeder.Organizations[0]);
-            seeder.SeedCitizenActivity(
-                scope.ServiceProvider.GetRequiredService<GirafDbContext>(),
-                seeder.Citizens[0].Id,
-                seeder.Pictograms[0]);
+            factory.SeedDb(scope, seeder);
             var client = factory.CreateClient();
 
             client.AttachClaimsToken(scope, seeder.Users["member"]);
-            
+
             var nonExistentPictogramId = 999;
             int activityId = seeder.Activities[0].Id;
 

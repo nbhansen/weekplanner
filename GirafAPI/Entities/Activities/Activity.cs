@@ -1,5 +1,3 @@
-﻿using GirafAPI.Entities.Pictograms;
-
 namespace GirafAPI.Entities.Activities;
 
 // Data model of one activity in a day
@@ -20,6 +18,4 @@ public class Activity
     public int? GradeId { get; set; }
 
     public int? PictogramId { get; set; }
-
-    public Pictogram? Pictogram { get; set; }
 }

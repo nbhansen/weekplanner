@@ -168,17 +168,15 @@ public abstract class DbSeeder
             StartTime = TimeOnly.FromDateTime(DateTime.Now),
             EndTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1)),
             IsCompleted = false,
-            Pictogram = pictogram
+            CitizenId = citizenId,
+            PictogramId = pictogram.Id
         };
 
-        var citizen = dbContext.Citizens.Find(citizenId)
-            ?? throw new InvalidOperationException($"Citizen with ID {citizenId} not found during seeding.");
-        citizen.Activities.Add(activity);
-        dbContext.Add(activity);
+        dbContext.Activities.Add(activity);
         dbContext.SaveChanges();
         Activities.Add(activity);
     }
-    
+
     public void SeedGradeActivity(GirafDbContext dbContext, int gradeId, Pictogram pictogram)
     {
         var activity = new Activity
@@ -188,13 +186,11 @@ public abstract class DbSeeder
             StartTime = TimeOnly.FromDateTime(DateTime.Now),
             EndTime = TimeOnly.FromDateTime(DateTime.Now.AddHours(1)),
             IsCompleted = false,
-            Pictogram = pictogram
+            GradeId = gradeId,
+            PictogramId = pictogram.Id
         };
 
-        var grade = dbContext.Grades.Find(gradeId)
-            ?? throw new InvalidOperationException($"Grade with ID {gradeId} not found during seeding.");
-        grade.Activities.Add(activity);
-        dbContext.Add(activity);
+        dbContext.Activities.Add(activity);
         dbContext.SaveChanges();
         Activities.Add(activity);
     }

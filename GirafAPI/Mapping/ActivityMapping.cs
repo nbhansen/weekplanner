@@ -1,6 +1,5 @@
 using GirafAPI.Entities.Activities;
 using GirafAPI.Entities.Activities.DTOs;
-using GirafAPI.Entities.Pictograms;
 
 namespace GirafAPI.Mapping;
 
@@ -13,22 +12,11 @@ public static class ActivityMapping
             Date = DateOnly.Parse(activityDto.Date),
             StartTime = TimeOnly.Parse(activityDto.StartTime),
             EndTime = TimeOnly.Parse(activityDto.EndTime),
-            IsCompleted = false
+            IsCompleted = false,
+            PictogramId = activityDto.PictogramId
         };
     }
 
-    public static Activity ToEntity(this CreateActivityDTO activityDto, Pictogram pictogram)
-    {
-        return new Activity
-        {
-            Date = DateOnly.Parse(activityDto.Date),
-            StartTime = TimeOnly.Parse(activityDto.StartTime),
-            EndTime = TimeOnly.Parse(activityDto.EndTime),
-            IsCompleted = false,
-            Pictogram = pictogram
-        };
-    }
-    
     public static Activity ToEntity(this UpdateActivityDTO activityDto, int id)
     {
         return new Activity
@@ -38,21 +26,10 @@ public static class ActivityMapping
             StartTime = TimeOnly.Parse(activityDto.StartTime),
             EndTime = TimeOnly.Parse(activityDto.EndTime),
             IsCompleted = activityDto.IsCompleted,
+            PictogramId = activityDto.PictogramId
         };
     }
 
-    public static Activity ToEntity(this UpdateActivityDTO activityDto, int id, Pictogram pictogram)
-    {
-        return new Activity
-        {
-            Id = id,
-            Date = DateOnly.Parse(activityDto.Date),
-            StartTime = TimeOnly.Parse(activityDto.StartTime),
-            EndTime = TimeOnly.Parse(activityDto.EndTime),
-            IsCompleted = activityDto.IsCompleted,
-            Pictogram = pictogram
-        };
-    }
     public static ActivityDTO ToDTO(this Activity activity)
     {
         return new ActivityDTO(
@@ -61,7 +38,7 @@ public static class ActivityMapping
             activity.StartTime.ToString("HH:mm"),
             activity.EndTime.ToString("HH:mm"),
             activity.IsCompleted,
-            activity.Pictogram
+            activity.PictogramId
         );
     }
 }

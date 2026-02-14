@@ -1,6 +1,7 @@
 using System.Text;
 using Giraf.IntegrationTests.Utils.DbSeeders;
 using GirafAPI.Authorization;
+using GirafAPI.Clients;
 using GirafAPI.Data;
 using GirafAPI.Configuration;
 using GirafAPI.Entities.Users;
@@ -22,6 +23,12 @@ namespace Giraf.IntegrationTests.Utils;
 internal class GirafWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly List<string> _dbFiles = new();
+    private readonly bool _stubCoreClient;
+
+    public GirafWebApplicationFactory(bool stubCoreClient = false)
+    {
+        _stubCoreClient = stubCoreClient;
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -63,6 +70,13 @@ internal class GirafWebApplicationFactory : WebApplicationFactory<Program>
                 options.AddPolicy("OwnData", policy =>
                     policy.Requirements.Add(new OwnDataRequirement()));
             });
+
+            // Optionally replace ICoreClient with a stub
+            if (_stubCoreClient)
+            {
+                services.RemoveAll<ICoreClient>();
+                services.AddSingleton<ICoreClient, StubCoreClient>();
+            }
 
             // Build the service provider and create a scope
             var serviceProvider = services.BuildServiceProvider();
