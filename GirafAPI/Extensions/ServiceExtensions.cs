@@ -1,14 +1,15 @@
+using GirafAPI.Authorization;
+using GirafAPI.Clients;
 using GirafAPI.Configuration;
 using GirafAPI.Data;
 using GirafAPI.Entities.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using GirafAPI.Authorization;
-using Microsoft.AspNetCore.Authorization;
 
 namespace GirafAPI.Extensions
 {
@@ -101,6 +102,19 @@ namespace GirafAPI.Extensions
                     policy.Requirements.Add(new OrgOwnerRequirement()));
                 options.AddPolicy("OwnData", policy =>
                     policy.Requirements.Add(new OwnDataRequirement()));
+            });
+
+            return services;
+        }
+
+        public static IServiceCollection ConfigureCoreClient(this IServiceCollection services, IConfiguration configuration)
+        {
+            var baseUrl = configuration.GetValue<string>("GirafCore:BaseUrl")
+                ?? throw new InvalidOperationException("GirafCore:BaseUrl configuration is required.");
+
+            services.AddHttpClient<ICoreClient, GirafCoreClient>(client =>
+            {
+                client.BaseAddress = new Uri(baseUrl);
             });
 
             return services;
