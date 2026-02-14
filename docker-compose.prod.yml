@@ -1,18 +1,16 @@
 services:
   aspnet_app:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile.prod
     environment:
-      ASPNETCORE_ENVIRONMENT: Staging
+      ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5171
-      ConnectionStrings__DbConnection: "Host=postgres_db;Port=5432;Database=${GIRAF_DB_NAME:-giraf_staging};Username=${GIRAF_DB_USER:-postgres};Password=${GIRAF_DB_PASSWORD:?GIRAF_DB_PASSWORD is required}"
+      ConnectionStrings__DbConnection: "Host=postgres_db;Port=5432;Database=${GIRAF_DB_NAME:-giraf_prod};Username=${GIRAF_DB_USER:-postgres};Password=${GIRAF_DB_PASSWORD:?GIRAF_DB_PASSWORD is required}"
       JwtSettings__SecretKey: "${GIRAF_JWT_SECRET:?GIRAF_JWT_SECRET is required (min 32 chars)}"
       JwtSettings__Issuer: "${GIRAF_JWT_ISSUER:-Giraf}"
       JwtSettings__Audience: "${GIRAF_JWT_AUDIENCE:-GirafApp}"
-      SeedData__Enabled: "${GIRAF_SEED_ENABLED:-true}"
-      SeedData__CreateDefaultUser: "${GIRAF_SEED_USER:-false}"
-      SeedData__AddDefaultPictograms: "${GIRAF_SEED_PICTOGRAMS:-true}"
+      GirafCore__BaseUrl: "${GIRAF_CORE_URL:?GIRAF_CORE_URL is required}"
     ports:
       - "${GIRAF_API_PORT:-5171}:5171"
     depends_on:
@@ -22,15 +20,15 @@ services:
 
   postgres_db:
     image: postgres:15
-    container_name: postgres_db_staging
+    container_name: weekplanner_db
     environment:
       POSTGRES_USER: ${GIRAF_DB_USER:-postgres}
       POSTGRES_PASSWORD: ${GIRAF_DB_PASSWORD:?GIRAF_DB_PASSWORD is required}
-      POSTGRES_DB: ${GIRAF_DB_NAME:-giraf_staging}
+      POSTGRES_DB: ${GIRAF_DB_NAME:-giraf_prod}
     ports:
       - "${GIRAF_DB_PORT:-5432}:5432"
     volumes:
-      - pgdata_staging:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${GIRAF_DB_USER:-postgres}"]
       interval: 10s
@@ -39,4 +37,4 @@ services:
     restart: unless-stopped
 
 volumes:
-  pgdata_staging:
+  pgdata:

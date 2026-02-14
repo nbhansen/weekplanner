@@ -1,21 +1,22 @@
 services:
   aspnet_app:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     environment:
-      ASPNETCORE_ENVIRONMENT: Development  # Change to Production as needed
+      ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:5171
       ConnectionStrings__DbConnection: "Host=postgres_db;Port=5432;Database=giraf_dev;Username=postgres;Password=YourStrong!Passw0rd"
+      GirafCore__BaseUrl: "http://host.docker.internal:8000"
     ports:
-      - "5171:5171"  # Change to your preferred port -> host_port:container_port
+      - "5171:5171"
     depends_on:
       postgres_db:
         condition: service_healthy
 
   postgres_db:
     image: postgres:15
-    container_name: postgres_db
+    container_name: weekplanner_db
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: YourStrong!Passw0rd
