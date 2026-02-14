@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "scheme": "your-app-scheme",
+    "name": "weekplan",
+    "slug": "weekplan",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.girafsvenner.ugeplan",
+      "usesBroadcastPushNotifications": false,
+      "infoPlist": {
+        "NSCameraUsageDescription": "GIRAF Weekplan bruger kameraadgang til at tage billeder til profilbilleder eller til at uploade billeder for din organisation.",
+        "NSPhotoLibraryUsageDescription": "GIRAF Weekplan bruger adgang til dit fotobibliotek for at vælge billeder til profilbilleder eller til at uploade billeder for din organisation."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": ["android.permission.RECORD_AUDIO"],
+      "package": "com.girafsvenner.ugeplan"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to get pictures for the weekplans"
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Allow weekplanner to access your Face ID biometric data."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "6d78d9b1-dfb5-4ace-8a66-9956e42d069e"
+      }
+    }
+  }
+}

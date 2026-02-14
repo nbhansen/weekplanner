@@ -1,0 +1,38 @@
+import base64 from "react-native-base64";
+
+export function isTokenExpired(token: string): boolean {
+  try {
+    const arrayToken = token.split(".");
+    const payload = JSON.parse(atob(arrayToken[1]));
+    const expirationTime = payload.exp;
+    return !expirationTime || Date.now() >= expirationTime * 1000;
+  } catch {
+    return true;
+  }
+}
+
+export function getUserIdFromToken(token: string): string {
+  try {
+    const arrayToken = token.split(".");
+    let parsed = base64.decode(arrayToken[1]);
+    parsed = parsed.substring(0, parsed.lastIndexOf("}") + 1);
+    const payload = JSON.parse(parsed);
+
+    const userId = payload["sub"];
+    return userId;
+  } catch {
+    return "";
+  }
+}
+
+export function getOrgRolesFromToken(token: string): Record<string, string> {
+  try {
+    const arrayToken = token.split(".");
+    let parsed = base64.decode(arrayToken[1]);
+    parsed = parsed.substring(0, parsed.lastIndexOf("}") + 1);
+    const payload = JSON.parse(parsed);
+    return payload["org_roles"] ?? {};
+  } catch {
+    return {};
+  }
+}
