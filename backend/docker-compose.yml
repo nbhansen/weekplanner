@@ -1,0 +1,34 @@
+services:
+  aspnet_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development  # Change to Production as needed
+      ASPNETCORE_URLS: http://+:5171
+      ConnectionStrings__DbConnection: "Host=postgres_db;Port=5432;Database=giraf_dev;Username=postgres;Password=YourStrong!Passw0rd"
+    ports:
+      - "5171:5171"  # Change to your preferred port -> host_port:container_port
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+
+  postgres_db:
+    image: postgres:15
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: YourStrong!Passw0rd
+      POSTGRES_DB: giraf_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
