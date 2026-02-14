@@ -1,35 +1,26 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text.Json;
-using GirafAPI.Entities.Users;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Giraf.IntegrationTests.Utils;
 
 public static class HttpClientExtensions
 {
-    public static void AttachClaimsToken(this HttpClient httpClient, IServiceScope scope, GirafUser user)
+    /// <summary>
+    /// Attaches a test JWT with org_roles claim for a given role.
+    /// </summary>
+    public static void AttachClaimsToken(this HttpClient httpClient, string userId = "test-user-id",
+        string role = "member", int orgId = 1)
     {
-        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<GirafUser>>();
-        var dbClaims = userManager.GetClaimsAsync(user).GetAwaiter().GetResult().ToList();
-
-        // Build org_roles claim from old-style OrgMember/OrgAdmin/OrgOwner claims
-        var orgRoles = new Dictionary<string, string>();
-        foreach (var claim in dbClaims)
+        var orgRoles = new Dictionary<string, string>
         {
-            if (claim.Type == "OrgOwner")
-                orgRoles[claim.Value] = "owner";
-            else if (claim.Type == "OrgAdmin" && !orgRoles.ContainsKey(claim.Value))
-                orgRoles[claim.Value] = "admin";
-            else if (claim.Type == "OrgMember" && !orgRoles.ContainsKey(claim.Value))
-                orgRoles[claim.Value] = "member";
-        }
+            [orgId.ToString()] = role
+        };
 
         var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim("sub", user.Id),
+            new Claim(ClaimTypes.NameIdentifier, userId),
+            new Claim("sub", userId),
             new Claim("org_roles", JsonSerializer.Serialize(orgRoles))
         };
 

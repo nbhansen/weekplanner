@@ -2,10 +2,8 @@ using GirafAPI.Authorization;
 using GirafAPI.Clients;
 using GirafAPI.Configuration;
 using GirafAPI.Data;
-using GirafAPI.Entities.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -25,23 +23,6 @@ namespace GirafAPI.Extensions
 
             services.AddDbContext<GirafDbContext>(options =>
                 options.UseNpgsql(connectionString));
-
-            return services;
-        }
-
-        public static IServiceCollection ConfigureIdentity(this IServiceCollection services)
-        {
-            services.AddIdentity<GirafUser, IdentityRole>(options =>
-            {
-                // Configure password requirements
-                options.Password.RequireDigit = true;
-                options.Password.RequiredLength = 8;
-                options.Password.RequireNonAlphanumeric = false;
-                options.Password.RequireUppercase = true;
-                options.Password.RequireLowercase = true;
-            })
-            .AddEntityFrameworkStores<GirafDbContext>()
-            .AddDefaultTokenProviders();
 
             return services;
         }
@@ -90,6 +71,7 @@ namespace GirafAPI.Extensions
 
         public static IServiceCollection ConfigureAuthorizationPolicies(this IServiceCollection services)
         {
+            services.AddHttpContextAccessor();
             services.AddScoped<IAuthorizationHandler, JwtOrgRoleHandler>();
 
             services.AddAuthorization(options =>

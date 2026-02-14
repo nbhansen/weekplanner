@@ -1,11 +1,12 @@
 # Weekplanner Migration to giraf-core - Progress Tracker
 
-**Last Updated:** 2026-02-13
-**Status:** Phases 1-3 complete, ready for Phase 4
-**Test Results:** ✅ Backend 103/103 passing (100%)
+**Last Updated:** 2026-02-14
+**Status:** Phases 1-4 complete, ready for Phase 5
+**Test Results:** ✅ Core 115 passing, Backend 103 passing, Frontend 131 passing (100%)
 **Git Branches:**
+- Core: `main` @ `49e97be` feat(core): add endpoints for weekplanner frontend migration
 - Backend: `main` @ `801c27b` docs(backend): update README for Core JWT validation
-- Frontend: `master` @ `426e294` feat(frontend): migrate authentication to giraf-core
+- Frontend: `master` @ `ed35bdc` feat(frontend): migrate shared entity calls to giraf-core
 
 ---
 
@@ -103,22 +104,36 @@ Implemented JWT claim-based authorization that reads `org_roles` from Core-issue
 
 ---
 
-### Phase 4: Frontend — Migrate Shared Entity Calls to Core
+### ✅ Phase 4: Frontend — Migrate Shared Entity Calls to Core (2026-02-14)
+**Status:** COMPLETE
+**Commits:** `49e97be` (Core) and `ed35bdc` (Frontend)
 **Goal:** Frontend calls Core directly for shared domain data.
 
-**Migration order (by dependency):**
-1. Users/Profile → Core `/api/v1/users/me`
-2. Organizations → Core `/api/v1/organizations/*`
-3. Invitations → Core `/api/v1/invitations/*`
-4. Pictograms → Core `/api/v1/pictograms*`
-5. Grades → Core `/api/v1/organizations/{orgId}/grades*`
-6. Citizens → Core `/api/v1/organizations/{orgId}/citizens*` and `/api/v1/citizens/*`
+**Core extensions made (needed for frontend compatibility):**
+- `MemberOut` schema — added `first_name`, `last_name`, `email` fields
+- `PATCH /api/v1/organizations/{id}` — update organization name
+- `DELETE /api/v1/organizations/{id}` — delete organization (owner only)
+- `POST/DELETE /api/v1/organizations/{id}/grades/{gid}/citizens` — add/remove citizens from grades
+- `POST /api/v1/pictograms` — upload pictogram with image file
 
-**Each migration:**
-- Switch API module from `axiosInstance` to `coreAxiosInstance`
-- Transform `snake_case` (Core) ↔ `PascalCase` (weekplanner)
-- Update TanStack Query hooks
-- Test UI end-to-end
+**Frontend files created:**
+- `apis/coreApiMappers.ts` — snake_case ↔ camelCase mapping layer for all Core responses
+
+**Frontend files modified (12):**
+- `apis/userAPI.ts` — profile calls → Core `/api/v1/users/me`
+- `apis/organizationAPI.ts` — CRUD → Core `/api/v1/organizations/*`
+- `apis/invitationAPI.ts` — invitations → Core `/api/v1/invitations/*`
+- `apis/pictogramAPI.ts` — pictograms → Core `/api/v1/pictograms*`
+- `apis/gradeAPI.ts` — grades → Core `/api/v1/organizations/{orgId}/grades*`
+- `apis/citizenAPI.ts` — citizens → Core `/api/v1/organizations/{orgId}/citizens*`
+- `components/InvitationList.tsx` — adapted to Core response format
+- `components/GradeItem.tsx` — adapted to Core response format
+- `components/GradeSelector.tsx` — adapted to Core response format
+- `app/(app)/viewOrganization/[id].tsx` — adapted to Core response format
+- `app/(app)/viewCitizen/[id].tsx` — adapted to Core response format
+- `app/(app)/settings/index.tsx` — adapted to Core response format
+
+**Verification:** 115 Core tests + 131 Frontend tests all passing.
 
 ---
 

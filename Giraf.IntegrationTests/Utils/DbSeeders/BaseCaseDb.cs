@@ -1,25 +1,14 @@
 using GirafAPI.Data;
-using GirafAPI.Entities.Invitations;
-using GirafAPI.Entities.Users;
-using Microsoft.AspNetCore.Identity;
 
 namespace Giraf.IntegrationTests.Utils.DbSeeders;
 
 public class BaseCaseDb : DbSeeder
 {
-    public override void SeedData(GirafDbContext dbContext, UserManager<GirafUser> userManager)
+    public override void SeedData(GirafDbContext dbContext)
     {
-        SeedUsers(userManager);
-        SeedOrganization(
-            dbContext,
-            userManager,
-            Users["owner"],
-            [Users["admin"]],
-            [Users["member"]]);
-        SeedCitizens(dbContext, Organizations.First());
-        SeedPictogram(dbContext, Organizations.First());
-        SeedCitizenActivity(dbContext, Citizens.First().Id, Pictograms.First());
-        SeedGrade(dbContext, Organizations.First());
-        SeedGradeActivity(dbContext, Grades.First().Id, Pictograms.First());
+        // Seed a citizen activity (citizenId=1, pictogramId=1)
+        SeedCitizenActivity(dbContext, citizenId: 1, pictogramId: 1);
+        // Seed a grade activity (gradeId=1, pictogramId=1)
+        SeedGradeActivity(dbContext, gradeId: 1, pictogramId: 1);
     }
 }
